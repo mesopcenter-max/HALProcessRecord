@@ -1,0 +1,20 @@
+* { box-sizing: border-box; }
+body { margin:0; font-family:Segoe UI, Arial, sans-serif; background:#f4f6f8; color:#1f2937; }
+.topbar { background:#111827; color:#fff; display:flex; justify-content:space-between; align-items:center; padding:14px 28px; }
+.brand { font-weight:700; }
+.topbar a { color:#fff; text-decoration:none; margin-left:20px; }
+.container { max-width:1400px; margin:30px auto; padding:0 20px; }
+.page-head { display:flex; justify-content:space-between; margin-bottom:20px; }
+h1 { margin:0 0 6px; } h2 { margin:0 0 18px; font-size:20px; }
+.card { background:#fff; border:1px solid #dbe1e8; border-radius:10px; padding:22px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.grid { display:grid; gap:16px; } .grid.two { grid-template-columns:repeat(2,1fr); } .grid.three { grid-template-columns:repeat(3,1fr); }
+.field { display:flex; flex-direction:column; gap:6px; } .field.wide { grid-column:span 3; }
+label { font-weight:600; font-size:14px; } input, select, textarea { width:100%; padding:10px 11px; border:1px solid #cbd5e1; border-radius:6px; font:inherit; background:#fff; }
+input:focus, select:focus, textarea:focus { outline:2px solid #93c5fd; border-color:#60a5fa; }
+.validation, .field span.field-validation-error { color:#b91c1c; font-size:13px; } .validation { margin-bottom:15px; }
+.section-title { display:flex; align-items:center; justify-content:space-between; } .hint { color:#64748b; font-size:13px; }
+.table-wrap { overflow-x:auto; } table { width:100%; border-collapse:collapse; } th, td { border:1px solid #dbe1e8; padding:8px; text-align:left; vertical-align:middle; } th { background:#eef2f7; font-size:13px; } td input { min-width:85px; }
+.calculated { background:#f8fafc; color:#64748b; text-align:center; }
+.actions { display:flex; gap:12px; margin:20px 0 50px; } .button, button { border:0; border-radius:7px; padding:11px 18px; text-decoration:none; cursor:pointer; font-weight:600; font-size:14px; }
+.primary { background:#2563eb; color:#fff; } .secondary { background:#e5e7eb; color:#111827; }
+@media(max-width:900px){ .grid.two,.grid.three{grid-template-columns:1fr;} .field.wide{grid-column:auto;} .topbar{align-items:flex-start;gap:10px;flex-direction:column;} }

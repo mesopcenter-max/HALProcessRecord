@@ -1,0 +1,17 @@
+@model IEnumerable<HALProcessRecord.Models.ProcessRecordEntity>
+@{
+    ViewData["Title"] = "History";
+}
+<h1>Process Record History</h1>
+<p><a class="primary button" asp-action="Create">New Record</a></p>
+<div class="card table-wrap">
+<table>
+<thead><tr><th>ID</th><th>Date</th><th>Part No</th><th>Batch No</th><th>Qty</th><th>Operator</th><th>Created</th><th>View</th><th>Download</th></tr></thead>
+<tbody>
+@foreach (var item in Model)
+{
+<tr><td>@item.Id</td><td>@item.Date.ToString("dd-MM-yyyy")</td><td>@item.PartNo</td><td>@item.BatchNo</td><td>@item.Qty</td><td>@item.OperatorName</td><td>@item.CreatedAt.ToString("dd-MM-yyyy HH:mm")</td><td><a asp-action="ViewReport" asp-route-id="@item.Id" target="_blank" rel="noopener">View</a></td><td><a asp-action="DownloadReport" asp-route-id="@item.Id">Download</a></td></tr>
+}
+</tbody>
+</table>
+</div>

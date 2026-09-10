@@ -1,0 +1,89 @@
+@model HALProcessRecord.Models.ProcessRecordEntity
+@{
+    ViewData["Title"] = "Process Record Report";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Process Record Report</h1>
+        <div class="hint">Record #@Model.Id · Created @Model.CreatedAt.ToString("dd-MM-yyyy HH:mm")</div>
+    </div>
+    <div class="actions">
+        <a class="button primary" asp-action="DownloadReport" asp-route-id="@Model.Id">Download Excel</a>
+        <a class="button secondary" asp-action="History">Back to History</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Basic Information</h2>
+    <div class="grid three">
+        <div class="field"><label>Date</label><div>@Model.Date.ToString("dd-MM-yyyy")</div></div>
+        <div class="field"><label>Part No</label><div>@Model.PartNo</div></div>
+        <div class="field"><label>Quantity</label><div>@Model.Qty</div></div>
+        <div class="field"><label>Batch No</label><div>@Model.BatchNo</div></div>
+        <div class="field"><label>Loading Date</label><div>@Model.LoadingDate.ToString("dd-MM-yyyy")</div></div>
+        <div class="field"><label>Loading Time</label><div>@Model.LoadingTime</div></div>
+        <div class="field"><label>Furnace</label><div>@Model.Furnace</div></div>
+        <div class="field"><label>Forging Temperature</label><div>@Model.ForgingTemperature</div></div>
+        <div class="field"><label>Temperature Tolerance</label><div>@Model.TemperatureTolerance</div></div>
+        <div class="field"><label>Soaking Start Temperature</label><div>@Model.SoakingStartTemperature</div></div>
+        <div class="field"><label>Soaking Minimum</label><div>@Model.SoakingMin</div></div>
+        <div class="field"><label>Soaking Maximum</label><div>@Model.SoakingMax</div></div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Operation Details</h2>
+    <div class="grid three">
+        <div class="field"><label>Soaking Start Time</label><div>@Model.SoakingStartTime</div></div>
+        <div class="field"><label>Minimum Soaking Complete</label><div>@Model.MinimumSoakingComplete</div></div>
+        <div class="field"><label>Operation End Before</label><div>@Model.OperationEndBefore</div></div>
+        <div class="field"><label>Actual Operation Start</label><div>@Model.ActualOperationStartTime</div></div>
+        <div class="field"><label>Actual Operation End</label><div>@Model.ActualOperationEndTime</div></div>
+        <div class="field"><label>Operator Name</label><div>@Model.OperatorName</div></div>
+        <div class="field"><label>Operation</label><div>@Model.Operation</div></div>
+        <div class="field"><label>Equipment</label><div>@Model.Equipment</div></div>
+        <div class="field"><label>Ring Rolling Stage No</label><div>@Model.RingRollingStageNo</div></div>
+        <div class="field"><label>Mandrel Diameter</label><div>@Model.MandrelDiameter</div></div>
+        <div class="field"><label>Prepared By</label><div>@Model.PreparedBy</div></div>
+        <div class="field"><label>Verified By</label><div>@Model.VerifiedBy</div></div>
+    </div>
+</div>
+
+<div class="card table-wrap">
+    <h2>Operation Rows</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Sl No</th>
+                <th>Transfer Minutes</th>
+                <th>Transfer Seconds</th>
+                <th>Total Minutes</th>
+                <th>Total Seconds</th>
+                <th>Operation Minutes</th>
+                <th>Operation Seconds</th>
+                <th>Observation</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var operation in Model.Operations.OrderBy(x => x.SlNo))
+        {
+            <tr>
+                <td>@operation.SlNo</td>
+                <td>@operation.TransferMinutes</td>
+                <td>@operation.TransferSeconds</td>
+                <td>@operation.TotalMinutes</td>
+                <td>@operation.TotalSeconds</td>
+                <td>@operation.OperationMinutes</td>
+                <td>@operation.OperationSeconds</td>
+                <td>@operation.Observation</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Remarks</h2>
+    <p>@Model.OtherRemarks</p>
+</div>

@@ -1,0 +1,99 @@
+@model ProcessRecordViewModel
+@{
+    ViewData["Title"] = "Create Process Record";
+}
+
+<div class="page-head">
+    <div>
+        <h1>GE Process Record</h1>
+        <p>Enter the record values and generate the original Excel template.</p>
+    </div>
+</div>
+
+<form asp-action="Generate" method="post" class="record-form">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="validation"></div>
+
+    <section class="card">
+        <h2>Basic Information</h2>
+        <div class="grid two">
+            <div class="field"><label asp-for="Date"></label><input asp-for="Date" type="date" /><span asp-validation-for="Date"></span></div>
+            <div class="field"><label asp-for="LoadingDate"></label><input asp-for="LoadingDate" type="date" /><span asp-validation-for="LoadingDate"></span></div>
+            <div class="field"><label asp-for="PartNo"></label><input asp-for="PartNo" placeholder="e.g. FD-3100" /><span asp-validation-for="PartNo"></span></div>
+            <div class="field"><label asp-for="Qty"></label><input asp-for="Qty" type="number" min="1" /><span asp-validation-for="Qty"></span></div>
+            <div class="field"><label asp-for="BatchNo"></label><input asp-for="BatchNo" placeholder="e.g. RR25JU73" /><span asp-validation-for="BatchNo"></span></div>
+            <div class="field"><label asp-for="LoadingTime"></label><input asp-for="LoadingTime" type="time" step="60" /><span asp-validation-for="LoadingTime"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Furnace / Soaking</h2>
+        <div class="grid three">
+            <div class="field"><label asp-for="Furnace"></label><input asp-for="Furnace" /><span asp-validation-for="Furnace"></span></div>
+            <div class="field"><label asp-for="ForgingTemperature"></label><input asp-for="ForgingTemperature" type="number" step="0.1" /><span asp-validation-for="ForgingTemperature"></span></div>
+            <div class="field"><label asp-for="TemperatureTolerance"></label><input asp-for="TemperatureTolerance" type="number" step="0.1" /><span asp-validation-for="TemperatureTolerance"></span></div>
+            <div class="field"><label asp-for="SoakingStartTemperature"></label><input asp-for="SoakingStartTemperature" type="number" step="0.1" /><span asp-validation-for="SoakingStartTemperature"></span></div>
+            <div class="field"><label asp-for="SoakingMin"></label><input asp-for="SoakingMin" type="time" step="60" /><span asp-validation-for="SoakingMin"></span></div>
+            <div class="field"><label asp-for="SoakingMax"></label><input asp-for="SoakingMax" type="time" step="60" /><span asp-validation-for="SoakingMax"></span></div>
+            <div class="field"><label asp-for="SoakingStartTime"></label><input asp-for="SoakingStartTime" type="time" step="60" /><span asp-validation-for="SoakingStartTime"></span></div>
+            <div class="field"><label asp-for="MinimumSoakingComplete"></label><input asp-for="MinimumSoakingComplete" type="time" step="60" /><span asp-validation-for="MinimumSoakingComplete"></span></div>
+            <div class="field"><label asp-for="OperationEndBefore"></label><input asp-for="OperationEndBefore" type="time" step="60" /><span asp-validation-for="OperationEndBefore"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Actual Operation</h2>
+        <div class="grid three">
+            <div class="field"><label asp-for="ActualOperationStartTime"></label><input asp-for="ActualOperationStartTime" type="time" step="60" /><span asp-validation-for="ActualOperationStartTime"></span></div>
+            <div class="field"><label asp-for="ActualOperationEndTime"></label><input asp-for="ActualOperationEndTime" type="time" step="60" /><span asp-validation-for="ActualOperationEndTime"></span></div>
+            <div class="field"><label asp-for="OperatorName"></label><input asp-for="OperatorName" /><span asp-validation-for="OperatorName"></span></div>
+            <div class="field"><label asp-for="Operation"></label><select asp-for="Operation"><option>Upset &amp; Pierce</option><option>Axial Pressing</option><option>Flattening</option></select></div>
+            <div class="field"><label asp-for="Equipment"></label><select asp-for="Equipment"><option>1500 Ton Press</option><option>3000 Ton Press</option><option>4000 Ton Press</option></select></div>
+            <div class="field"><label asp-for="RingRollingStageNo"></label><input asp-for="RingRollingStageNo" placeholder="e.g. 1" /><span asp-validation-for="RingRollingStageNo"></span></div>
+            <div class="field"><label asp-for="MandrelDiameter"></label><input asp-for="MandrelDiameter" type="number" step="0.1" /><span asp-validation-for="MandrelDiameter"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="section-title"><h2>Operation Times</h2><button type="button" class="secondary" onclick="addOperationRow()">+ Add Row</button></div>
+        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time, matching the sample values in the supplied template.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>SL</th><th>Transfer Min</th><th>Transfer Sec</th><th>Total Min</th><th>Total Sec</th><th>Operation Min</th><th>Operation Sec</th><th>Observation / Remarks</th></tr></thead>
+                <tbody id="operationRows">
+                @for (var i = 0; i < Model.Operations.Count; i++)
+                {
+                    <tr>
+                        <td>@(i + 1)<input type="hidden" asp-for="Operations[i].SlNo" /></td>
+                        <td><input asp-for="Operations[i].TransferMinutes" type="number" min="0" /></td>
+                        <td><input asp-for="Operations[i].TransferSeconds" type="number" min="0" max="59" /></td>
+                        <td><input asp-for="Operations[i].TotalMinutes" type="number" min="0" /></td>
+                        <td><input asp-for="Operations[i].TotalSeconds" type="number" min="0" max="59" /></td>
+                        <td class="calculated">Auto</td>
+                        <td class="calculated">Auto</td>
+                        <td><input asp-for="Operations[i].Observation" maxlength="500" /></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Remarks / Verification</h2>
+        <div class="grid three">
+            <div class="field wide"><label asp-for="OtherRemarks"></label><textarea asp-for="OtherRemarks" rows="3"></textarea></div>
+            <div class="field"><label asp-for="PreparedBy"></label><input asp-for="PreparedBy" /></div>
+            <div class="field"><label asp-for="VerifiedBy"></label><input asp-for="VerifiedBy" /></div>
+        </div>
+    </section>
+
+    <div class="actions">
+        <button type="submit" class="primary">Generate Excel</button>
+        <a class="secondary button" asp-action="Create">Clear Form</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
