@@ -8,6 +8,7 @@ This project creates an ASP.NET Core MVC web application that asks the user to e
 - SQL Server + Entity Framework Core 8
 - ClosedXML for Excel generation
 - Existing workbook used as the master template
+- Razor Pages with .cshtml extensions
 
 ## Project structure
 
