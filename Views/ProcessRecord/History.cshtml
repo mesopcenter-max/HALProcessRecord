@@ -1,17 +1,121 @@
 @model IEnumerable<HALProcessRecord.Models.ProcessRecordEntity>
+
 @{
     ViewData["Title"] = "History";
 }
-<h1>Process Record History</h1>
-<p><a class="primary button" asp-action="Create">New Record</a></p>
-<div class="card table-wrap">
-<table>
-<thead><tr><th>ID</th><th>Date</th><th>Part No</th><th>Batch No</th><th>Qty</th><th>Operator</th><th>Created</th><th>View</th><th>Download</th></tr></thead>
-<tbody>
-@foreach (var item in Model)
-{
-<tr><td>@item.Id</td><td>@item.Date.ToString("dd-MM-yyyy")</td><td>@item.PartNo</td><td>@item.BatchNo</td><td>@item.Qty</td><td>@item.OperatorName</td><td>@item.CreatedAt.ToString("dd-MM-yyyy HH:mm")</td><td><a asp-action="ViewReport" asp-route-id="@item.Id" target="_blank" rel="noopener">View</a></td><td><a asp-action="DownloadReport" asp-route-id="@item.Id">Download</a></td></tr>
-}
-</tbody>
-</table>
+
+<div class="page-head history-head">
+    <div>
+        <h1>Process Record History</h1>
+        <p>View previously generated GE process records and download their Excel reports.</p>
+    </div>
+
+    <a class="primary button" asp-action="Create">
+        + New Record
+    </a>
+</div>
+
+<div class="card history-card">
+
+    <div class="history-toolbar">
+        <div>
+            <h2>Process Records</h2>
+            <span class="record-count">
+                @Model.Count() record(s)
+            </span>
+        </div>
+    </div>
+
+    <div class="table-wrap history-table-wrap">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>Part No</th>
+                    <th>Batch No</th>
+                    <th>Qty</th>
+                    <th>Operator</th>
+                    <th>Created</th>
+                    <th>View</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="record-id">
+                                    #@item.Id
+                                </span>
+                            </td>
+
+                            <td>
+                                @item.Date.ToString("dd-MM-yyyy")
+                            </td>
+
+                            <td>
+                                <strong>@item.PartNo</strong>
+                            </td>
+
+                            <td>
+                                @item.BatchNo
+                            </td>
+
+                            <td>
+                                <span class="qty-badge">
+                                    @item.Qty
+                                </span>
+                            </td>
+
+                            <td>
+                                @item.OperatorName
+                            </td>
+
+                            <td>
+                                <span class="created-date">
+                                    @item.CreatedAt.ToString("dd-MM-yyyy")
+                                </span>
+                                <small>
+                                    @item.CreatedAt.ToString("HH:mm")
+                                </small>
+                            </td>
+
+                            <td>
+                                <a class="table-action view-action" asp-action="ViewReport" asp-route-id="@item.Id"
+                                   target="_blank" rel="noopener">
+                                    View
+                                </a>
+                            </td>
+
+                            <td>
+                                <a class="table-action download-action" asp-action="DownloadReport" asp-route-id="@item.Id">
+                                    Download
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <strong>No process records found</strong>
+                            <p>Create a new process record to see it here.</p>
+
+                            <a class="primary button" asp-action="Create">
+                                Create Record
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
 </div>
