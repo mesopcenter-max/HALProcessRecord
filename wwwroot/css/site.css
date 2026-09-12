@@ -1,0 +1,1347 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f3f6f9;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.hal-header {
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hal-brand-area {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  padding: 8px 35px;
+  gap: 22px;
+}
+
+.hal-logo-box {
+  width: 145px;
+  height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #ffffff;
+}
+
+.hal-logo-box img {
+  width: 145px;
+  height: 145px;
+  object-fit: contain;
+  display: block;
+}
+
+.hal-title {
+  border-left: 2px solid #dbe3ec;
+  padding-left: 22px;
+}
+
+.hal-title-main {
+  color: #003b71;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.hal-title-sub {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.hal-nav {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 35px;
+  background: #003b71;
+}
+
+.hal-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 20px;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.hal-nav a:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.container {
+  width: 100%;
+  max-width: 1450px;
+  margin: 0 auto;
+  padding: 30px 24px 60px;
+}
+
+.page-head {
+  width: 100%;
+  background: #ffffff;
+  border-left: 5px solid #003b71;
+  border-radius: 8px;
+  padding: 22px 25px;
+  margin-bottom: 22px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+.page-head h1 {
+  margin: 0;
+  color: #003b71;
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.page-head p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #dce3ea;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.card h2 {
+  position: relative;
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  color: #003b71;
+  font-size: 18px;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 48px;
+  height: 3px;
+  border-radius: 3px;
+}
+
+.grid {
+  display: grid;
+  width: 100%;
+}
+
+.grid.two {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 24px;
+  row-gap: 20px;
+}
+
+.grid.three {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 20px;
+  row-gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+}
+
+.field.wide {
+  grid-column: span 3;
+}
+
+label {
+  display: block;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.field input,
+.field select,
+.field textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  appearance: auto;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input:hover,
+.field select:hover,
+.field textarea:hover {
+  border-color: #94a3b8;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: #0066a1;
+  box-shadow: 0 0 0 3px rgba(0, 102, 161, 0.12);
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.field textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.validation {
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.field span.field-validation-error {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.section-title h2 {
+  flex: 1;
+}
+
+.hint {
+  margin: 0 0 18px;
+  padding: 10px 13px;
+  color: #475569;
+  background: #f0f6fb;
+  border-left: 4px solid #0066a1;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #dbe3ec;
+  border-radius: 7px;
+}
+
+table {
+  width: 100%;
+  min-width: 950px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+}
+
+th,
+td {
+  padding: 9px 10px;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  background: #003b71;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+table td input,
+table td select,
+table td textarea {
+  display: block;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  outline: none;
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+table td input:hover,
+table td select:hover,
+table td textarea:hover {
+  border-color: #94a3b8;
+}
+
+table td input:focus,
+table td select:focus,
+table td textarea:focus {
+  outline: none;
+  border-color: #0066a1;
+  box-shadow: 0 0 0 2px rgba(0, 102, 161, 0.12);
+}
+
+table td input[type="number"],
+table td input[type="text"] {
+  width: 100% !important;
+}
+
+table td input[type="number"] {
+  text-align: left;
+}
+
+.calculated {
+  min-width: 90px;
+  background: #f1f5f9;
+  color: #64748b;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+tbody tr {
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover td {
+  background: #f5f9fc;
+}
+
+tbody tr:hover td.calculated {
+  background: #eef3f7;
+}
+
+th:last-child,
+td:last-child {
+  border-right: 0;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.button,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 19px;
+  border: 0;
+  border-radius: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.button:hover,
+button:hover {
+  transform: translateY(-1px);
+}
+
+.primary {
+  background: #003b71;
+  color: #ffffff;
+  box-shadow: 0 3px 7px rgba(0, 59, 113, 0.22);
+}
+
+.primary:hover {
+  background: #002b54;
+  color: #ffffff;
+  box-shadow: 0 5px 12px rgba(0, 59, 113, 0.28);
+}
+
+.secondary {
+  background: #e8edf2;
+  color: #1e293b;
+}
+
+.secondary:hover {
+  background: #d8e0e8;
+  color: #1e293b;
+}
+
+.section-title .secondary {
+  background: #eef6fb;
+  color: #003b71;
+  border: 1px solid #b9d5e8;
+}
+
+.section-title .secondary:hover {
+  background: #dceef8;
+  color: #003b71;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 25px 0 50px;
+}
+
+.actions .primary {
+  min-width: 165px;
+}
+
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.history-head .primary {
+  white-space: nowrap;
+}
+
+.history-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.history-toolbar h2 {
+  margin: 0;
+  padding: 0;
+  color: #003b71;
+  font-size: 18px;
+  border: 0;
+}
+
+.history-toolbar h2::after {
+  display: none;
+}
+
+.record-count {
+  display: inline-block;
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.history-table-wrap {
+  border: 0;
+  border-radius: 0;
+}
+
+.history-table {
+  min-width: 1050px;
+}
+
+.history-table th {
+  padding: 13px 12px;
+  background: #003b71;
+  color: #ffffff;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+}
+
+.history-table td {
+  padding: 13px 12px;
+  color: #334155;
+  background: #ffffff;
+}
+
+.history-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.history-table tbody tr:hover td {
+  background: #f5f9fc;
+}
+
+.record-id {
+  display: inline-block;
+  color: #003b71;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.qty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  padding: 4px 9px;
+  background: #eef6fb;
+  color: #003b71;
+  border: 1px solid #c8dfed;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.created-date {
+  display: block;
+  font-size: 13px;
+}
+
+.history-table td small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 75px;
+  padding: 7px 11px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.view-action {
+  color: #003b71;
+  background: #eef6fb;
+  border: 1px solid #c5dce9;
+}
+
+.view-action:hover {
+  color: #002b54;
+  background: #dceef8;
+}
+
+.download-action {
+  color: #ffffff;
+  background: #c8102e;
+  border: 1px solid #c8102e;
+}
+
+.download-action:hover {
+  color: #ffffff;
+  background: #a80d26;
+  border-color: #a80d26;
+}
+
+.empty-state {
+  padding: 60px 20px !important;
+  text-align: center !important;
+  color: #64748b;
+}
+
+.empty-icon {
+  margin-bottom: 10px;
+  font-size: 35px;
+}
+
+.empty-state strong {
+  display: block;
+  color: #334155;
+  font-size: 16px;
+}
+
+.empty-state p {
+  margin: 5px 0 18px;
+  font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+  .grid.three {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .field.wide {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .grid.two,
+  .grid.three {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    row-gap: 18px;
+  }
+
+  .field.wide {
+    grid-column: auto;
+  }
+
+  .hal-brand-area {
+    min-height: 80px;
+    padding: 10px 18px;
+    gap: 14px;
+  }
+
+  .hal-logo-box {
+    width: 100px;
+    height: 65px;
+  }
+
+  .hal-logo-box img {
+    width: 105px;
+    height: 105px;
+  }
+
+  .hal-title {
+    padding-left: 14px;
+  }
+
+  .hal-title-main {
+    font-size: 15px;
+  }
+
+  .hal-title-sub {
+    font-size: 11px;
+  }
+
+  .hal-nav {
+    padding: 0 18px;
+  }
+
+  .hal-nav a {
+    padding: 0 14px;
+  }
+
+  .container {
+    padding: 20px 14px 40px;
+  }
+
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions .primary,
+  .actions .secondary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .history-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-head .primary {
+    width: 100%;
+  }
+
+  .history-toolbar {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 500px) {
+  .hal-brand-area {
+    min-height: 70px;
+    padding: 8px 12px;
+    gap: 10px;
+  }
+
+  .hal-logo-box {
+    width: 80px;
+    height: 55px;
+  }
+
+  .hal-logo-box img {
+    width: 90px;
+    height: 90px;
+  }
+
+  .hal-title {
+    padding-left: 10px;
+  }
+
+  .hal-title-main {
+    font-size: 12px;
+  }
+
+  .hal-title-sub {
+    display: none;
+  }
+
+  .hal-nav {
+    padding: 0 10px;
+  }
+
+  .hal-nav a {
+    height: 44px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .container {
+    padding: 15px 10px 30px;
+  }
+
+  .page-head {
+    padding: 18px;
+  }
+
+  .page-head h1 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card h2 {
+    font-size: 17px;
+  }
+}
+
+@media (max-width: 700px) {
+  .history-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .history-head .primary {
+    width: 100%;
+  }
+
+  .history-toolbar {
+    padding: 18px;
+  }
+
+  .history-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+
+/* =========================================================
+   HAL GE PROCESS RECORD REPORT
+   Excel-style layout
+========================================================= */
+
+.excel-report {
+    width: 100%;
+    max-width: 1100px;
+    margin: 25px auto 60px;
+    background: #ffffff;
+    padding: 0;
+    color: #111827;
+    font-family: Arial, "Segoe UI", sans-serif;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.report-header {
+    position: relative;
+
+    min-height: 105px;
+
+    display: grid;
+    grid-template-columns: 180px 1fr 190px;
+    align-items: center;
+
+    border-bottom: 4px solid #003b71;
+
+    background: #ffffff;
+}
+
+
+/* Logo */
+
+.report-logo {
+    height: 95px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 5px 15px;
+}
+
+.report-logo img {
+    width: 145px;
+    height: 90px;
+
+    object-fit: contain;
+}
+
+
+/* Title */
+
+.report-title {
+    text-align: center;
+}
+
+.report-title-main {
+    color: #003b71;
+
+    font-size: 19px;
+    font-weight: 700;
+
+    letter-spacing: 0.2px;
+
+    margin-bottom: 5px;
+}
+
+.report-title-sub {
+    color: #e31837;
+
+    font-size: 10px;
+    font-style: italic;
+}
+
+
+/* Document information */
+
+.report-document-info {
+    align-self: start;
+
+    padding-top: 10px;
+    padding-right: 10px;
+
+    text-align: right;
+
+    color: #555555;
+
+    font-size: 10px;
+    font-style: italic;
+
+    line-height: 18px;
+}
+
+
+/* =========================================================
+   COMMON TABLE
+========================================================= */
+
+.report-table {
+    width: 100%;
+
+    border-collapse: collapse;
+    border-spacing: 0;
+
+    table-layout: fixed;
+
+    margin: 0;
+}
+
+.report-table td,
+.report-table th {
+    border: 1px solid #8fa9c5;
+
+    padding: 4px 8px;
+
+    line-height: 15px;
+
+    vertical-align: middle;
+}
+
+
+/* =========================================================
+   INFORMATION TABLE
+========================================================= */
+
+.info-table {
+    border-top: 0;
+}
+
+.info-table .label-cell {
+    width: 18%;
+
+    background: #e8edf3;
+
+    color: #003b71;
+
+    font-weight: 600;
+}
+
+.info-table .value-cell {
+    width: 27%;
+
+    background: #ffffff;
+
+    color: #222222;
+}
+
+
+/* Orange line */
+
+.orange-line td {
+    border-bottom: 3px solid #e87722;
+}
+
+
+/* Dark blue section separator */
+
+.section-border td {
+    border-bottom: 3px solid #003b71;
+}
+
+
+/* =========================================================
+   OPERATION / EQUIPMENT TABLE
+========================================================= */
+
+.operation-info-table {
+    border-top: 0;
+}
+
+.operation-info-table thead th {
+    background: #003b71;
+
+    color: #ffffff;
+
+    text-align: center;
+
+    font-size: 11px;
+
+    padding: 5px;
+
+    border-color: #8fa9c5;
+}
+
+.operation-name {
+    width: 29%;
+}
+
+.check-cell {
+    width: 7%;
+
+    text-align: center;
+
+    font-size: 18px;
+}
+
+.equipment-name {
+    width: 29%;
+}
+
+.check {
+    color: #e87722;
+
+    font-weight: 700;
+
+    font-size: 18px;
+}
+
+
+/* =========================================================
+   STAGE TABLE
+========================================================= */
+
+.stage-table {
+    border-top: 0;
+
+    border-bottom: 3px solid #003b71;
+}
+
+.stage-table .label-cell {
+    width: 18%;
+
+    background: #e8edf3;
+
+    color: #003b71;
+
+    font-weight: 600;
+}
+
+.stage-table .value-cell {
+    width: 27%;
+}
+
+
+/* =========================================================
+   OPERATION TIMES TABLE
+========================================================= */
+
+.operation-times {
+    margin-top: 0;
+}
+
+
+/* Main header */
+
+.operation-times thead tr:first-child th {
+    background: #003b71;
+
+    color: #ffffff;
+
+    text-align: center;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    padding: 5px 4px;
+}
+
+
+/* Second header */
+
+.operation-times thead tr:nth-child(2) th {
+    background: #e8edf3;
+
+    color: #003b71;
+
+    text-align: center;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    padding: 3px;
+}
+
+
+/* Table cells */
+
+.operation-times td {
+    height: 21px;
+
+    padding: 2px 5px;
+
+    border-color: #8fa9c5;
+
+    font-size: 11px;
+}
+
+
+/* Column sizes */
+
+.operation-times .sl-column {
+    width: 10%;
+}
+
+.operation-times th:nth-child(2),
+.operation-times th:nth-child(3) {
+    width: 9%;
+}
+
+.operation-times th:nth-child(4),
+.operation-times th:nth-child(5) {
+    width: 9%;
+}
+
+.operation-times th:nth-child(6),
+.operation-times th:nth-child(7) {
+    width: 7%;
+}
+
+.operation-times .remarks-column {
+    width: 31%;
+}
+
+
+/* Center */
+
+.center {
+    text-align: center;
+}
+
+
+/* Remarks */
+
+.remarks {
+    text-align: left;
+
+    padding-left: 8px !important;
+
+    white-space: normal;
+
+    word-break: break-word;
+}
+
+
+/* Alternate rows */
+
+.operation-times tbody tr:nth-child(even) {
+    background: #f4f4f4;
+}
+
+.operation-times tbody tr:hover {
+    background: #edf4fa;
+}
+
+
+/* =========================================================
+   REMARKS
+========================================================= */
+
+.remarks-table {
+    border-top: 3px solid #003b71;
+}
+
+.remarks-label {
+    width: 18%;
+
+    background: #e8edf3;
+
+    color: #003b71;
+
+    font-weight: 700;
+
+    vertical-align: top !important;
+}
+
+.remarks-value {
+    width: 82%;
+
+    min-height: 30px;
+
+    background: #ffffff;
+
+    vertical-align: top !important;
+
+    white-space: pre-wrap;
+}
+
+
+/* =========================================================
+   SIGNATURES
+========================================================= */
+
+.signature-area {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 100px;
+
+    padding: 25px 10px 15px;
+
+    color: #666666;
+
+    font-size: 11px;
+
+    font-style: italic;
+}
+
+.signature {
+    min-height: 35px;
+}
+
+.signature-line {
+    height: 1px;
+
+    width: 170px;
+
+    margin-bottom: 5px;
+
+    background: transparent;
+}
+
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.report-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 20px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #dbe3ec;
+}
+
+.report-button {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 9px 16px;
+
+    border-radius: 5px;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    font-weight: 600;
+}
+
+.report-button.download {
+    background: #003b71;
+
+    color: #ffffff;
+}
+
+.report-button.download:hover {
+    background: #002b54;
+}
+
+.report-button.back {
+    background: #e8edf3;
+
+    color: #003b71;
+
+    border: 1px solid #c5d2df;
+}
+
+.report-button.back:hover {
+    background: #dce5ed;
+}
+
+
+/* =========================================================
+   PAGE BACKGROUND
+========================================================= */
+
+body {
+    background: #f1f4f7;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .excel-report {
+        width: calc(100% - 20px);
+
+        margin: 15px auto 40px;
+
+        overflow-x: auto;
+    }
+
+    .report-header {
+        grid-template-columns: 130px 1fr 150px;
+
+        min-width: 900px;
+    }
+
+    .report-logo img {
+        width: 110px;
+    }
+
+    .report-title-main {
+        font-size: 16px;
+    }
+
+    .report-table {
+        min-width: 900px;
+    }
+
+    .report-actions {
+        justify-content: flex-start;
+
+        min-width: 900px;
+    }
+}
+
+
+/* =========================================================
+   PRINT
+========================================================= */
+
+@media print {
+
+    body {
+        background: #ffffff;
+    }
+
+    .excel-report {
+        width: 100%;
+        max-width: none;
+
+        margin: 0;
+
+        background: #ffffff;
+    }
+
+    .report-actions {
+        display: none;
+    }
+
+    .hal-header,
+    .hal-nav,
+    .topbar {
+        display: none !important;
+    }
+
+    .report-table {
+        page-break-inside: avoid;
+    }
+
+    .operation-times {
+        page-break-inside: auto;
+    }
+
+    .operation-times tr {
+        page-break-inside: avoid;
+    }
+}
