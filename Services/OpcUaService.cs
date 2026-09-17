@@ -145,7 +145,7 @@ public sealed class OpcUaService : IDisposable
                 }
             };
 
-            await config.Validate(ApplicationType.Client);
+            await config.ValidateAsync(ApplicationType.Client);
 
             if (autoAccept)
             {
@@ -155,20 +155,17 @@ public sealed class OpcUaService : IDisposable
                 };
             }
 
-            var application = new ApplicationInstance
-            {
-                ApplicationName = config.ApplicationName,
-                ApplicationType = ApplicationType.Client,
-                ApplicationConfiguration = config
-            };
+            var application = new ApplicationInstance(config, null);
 
             await application.CheckApplicationInstanceCertificatesAsync(false, 2048);
 
-            var selectedEndpoint = CoreClientUtils.SelectEndpoint(
+            var selectedEndpoint = await CoreClientUtils.SelectEndpointAsync(
                 config,
                 endpointUrl,
                 false,
-                operationTimeout);
+                operationTimeout,
+                null!,
+                CancellationToken.None);
 
             if (selectedEndpoint is null)
                 throw new InvalidOperationException($"No OPC UA endpoint was found at {endpointUrl}.");
@@ -181,14 +178,21 @@ public sealed class OpcUaService : IDisposable
                 selectedEndpoint,
                 endpointConfiguration);
 
-            _session = await Session.Create(
+#pragma warning disable CS0618
+            _session = await Session.CreateAsync(
+                null,
                 config,
+                null,
                 configuredEndpoint,
                 updateBeforeConnect: false,
+                checkDomain: false,
                 sessionName: "HAL Process Record OPC UA Session",
                 sessionTimeout: (uint)sessionTimeout,
                 identity: null,
-                preferredLocales: null);
+                preferredLocales: null,
+                DiagnosticsMasks.None,
+                CancellationToken.None);
+#pragma warning restore CS0618
 
             _session.KeepAlive += Session_KeepAlive;
             _connectedEndpointUrl = endpointUrl;
@@ -205,7 +209,7 @@ public sealed class OpcUaService : IDisposable
             throw new InvalidOperationException("OPC UA session is not connected.");
 
         var nodeId = NodeId.Parse(nodeIdText);
-        return _session.ReadValue(nodeId);
+        return _session.ReadValueAsync(nodeId).GetAwaiter().GetResult();
     }
 
     private static bool ToBoolean(object? value)
@@ -280,7 +284,7 @@ public sealed class OpcUaService : IDisposable
         try
         {
             _session.KeepAlive -= Session_KeepAlive;
-            _session.Close();
+            await _session.CloseAsync();
             _session.Dispose();
         }
         catch (Exception ex)

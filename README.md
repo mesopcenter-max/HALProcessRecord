@@ -1,6 +1,6 @@
 # HAL Ring Rolling Process Record - ASP.NET Core
 
-This project creates an ASP.NET Core MVC web application that asks the user to enter process-record values and then fills the supplied Excel template without rebuilding the template's formatting.
+This project creates an ASP.NET Core MVC web application that asks the user to enter process-record values and then fills the supplied Excel template .
 
 ## Technology
 
@@ -138,3 +138,8 @@ Excel template generation
 ```
 
 Do not connect the UI directly to the Opcenter database. Use the supported Opcenter integration/API mechanism where available, and keep the Excel generator independent.
+
+## Machine Timings
+## operation time calculation ( start - stop) automatic
+## Operation time calculation ( start when machine force exceeds 20 tons  - stop) manual
+

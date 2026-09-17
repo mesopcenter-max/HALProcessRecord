@@ -16,7 +16,7 @@
 
     <section class="card">
         <div class="section-title">
-            <h2>OPC UA / Machine Status</h2>
+            <h2>Furnace Status</h2>
             <button type="button" class="secondary" onclick="refreshOpcUaStatus()">Refresh</button>
         </div>
         <div class="grid three">
@@ -29,8 +29,8 @@
                 <div id="opcDoorStatus">@Model.OpcUa.Status</div>
             </div>
             <div class="field">
-                <label>Code</label>
-                <div id="opcCode">@Model.OpcUa.Code</div>
+                <label> Furnace</label>
+                <div id="opcCode">@Model.Furnace</div>
             </div>
             <div class="field">
                 <label>Door Open Signal</label>
@@ -188,9 +188,11 @@
 
         async function refreshOpcUaStatus() {
             const error = document.getElementById("opcError");
+            const selectedFurnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("opcFurnaceName").textContent = selectedFurnace;
 
             try {
-                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(document.getElementById('furnaceSelect').value), {
+                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(selectedFurnace), {
                     cache: "no-store"
                 });
 
@@ -200,6 +202,7 @@
 
                 const data = await response.json();
 
+                document.getElementById("opcFurnaceName").textContent = selectedFurnace;
                 document.getElementById("opcConnectionStatus").textContent = data.connectionStatus ?? "-";
                 document.getElementById("opcDoorStatus").textContent = data.status ?? "-";
                 document.getElementById("opcCode").textContent = data.code ?? "-";
