@@ -11,7 +11,6 @@ public sealed class OpcUaService : IDisposable
     private readonly IConfiguration _configuration;
     private readonly ILogger<OpcUaService> _logger;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
-    private readonly SemaphoreSlim _readLock = new(1, 1);
     private Session? _session;
     private string? _connectedEndpointUrl;
 
@@ -26,11 +25,9 @@ public sealed class OpcUaService : IDisposable
         var endpointUrl = GetEndpointUrl(furnace);
         var status = new OpcUaStatusViewModel
         {
-            Furnace = furnace ?? string.Empty,
             EndpointUrl = endpointUrl
         };
 
-        await _readLock.WaitAsync(cancellationToken);
         try
         {
             await EnsureConnectedAsync(endpointUrl, cancellationToken);
@@ -85,10 +82,6 @@ public sealed class OpcUaService : IDisposable
             status.Status = "Unavailable";
             status.ErrorMessage = ex.Message;
             return status;
-        }
-        finally
-        {
-            _readLock.Release();
         }
     }
 
@@ -312,7 +305,6 @@ public sealed class OpcUaService : IDisposable
         finally
         {
             _connectionLock.Dispose();
-            _readLock.Dispose();
         }
     }
 }

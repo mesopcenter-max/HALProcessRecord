@@ -16,14 +16,10 @@
 
     <section class="card">
         <div class="section-title">
-            <h2>Furnace Status</h2>
+            <h2>OPC UA / Machine Status</h2>
             <button type="button" class="secondary" onclick="refreshOpcUaStatus()">Refresh</button>
         </div>
         <div class="grid three">
-            <div class="field">
-                <label>Selected Furnace</label>
-                <div id="opcFurnace">@Model.Furnace</div>
-            </div>
             <div class="field">
                 <label>Connection</label>
                 <div id="opcConnectionStatus">@Model.OpcUa.ConnectionStatus</div>
@@ -32,7 +28,10 @@
                 <label>Door Status</label>
                 <div id="opcDoorStatus">@Model.OpcUa.Status</div>
             </div>
-          
+            <div class="field">
+                <label>Code</label>
+                <div id="opcCode">@Model.OpcUa.Code</div>
+            </div>
             <div class="field">
                 <label>Door Open Signal</label>
                 <div id="opcDoorOpen">@Model.OpcUa.DoorOpen</div>
@@ -111,8 +110,8 @@
     </section>
 
     <section class="card">
-        
-        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time</p>
+        <div class="section-title"><h2>Operation Times</h2><button type="button" class="secondary" onclick="addOperationRow()">+ Add Row</button></div>
+        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time, matching the sample values in the supplied template.</p>
         <div class="table-wrap">
             <table>
                 <thead><tr><th>SL</th><th>Transfer Min</th><th>Transfer Sec</th><th>Total Min</th><th>Total Sec</th><th>Operation Min</th><th>Operation Sec</th><th>Observation / Remarks</th></tr></thead>
@@ -187,31 +186,11 @@
         });
         updateFurnaceEndpoint();
 
-        let refreshInProgress = false;
-
         async function refreshOpcUaStatus() {
-            if (refreshInProgress) {
-                return;
-            }
-
-            refreshInProgress = true;
             const error = document.getElementById("opcError");
-            const furnace = document.getElementById("furnaceSelect").value;
-            const setText = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.textContent = value;
-                }
-            };
-            const showError = (message) => {
-                if (error) {
-                    error.textContent = message;
-                    error.style.display = "block";
-                }
-            };
 
             try {
-                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(furnace), {
+                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(document.getElementById('furnaceSelect').value), {
                     cache: "no-store"
                 });
 
@@ -221,36 +200,31 @@
 
                 const data = await response.json();
 
-                if (document.getElementById("furnaceSelect").value !== furnace) {
-                    return;
-                }
-
-                setText("opcFurnace", data.furnace ?? furnace);
-                setText("opcConnectionStatus", data.connectionStatus ?? "-");
-                setText("opcDoorStatus", data.status ?? "-");
-                setText("opcCode", data.code ?? "-");
-                setText("opcDoorOpen", data.doorOpen ? "True" : "False");
-                setText("opcDoorClosed", data.doorClosed ? "True" : "False");
-                setText("opcDoorOpenSourceTimestamp", data.doorOpenSourceTimestamp
+                document.getElementById("opcConnectionStatus").textContent = data.connectionStatus ?? "-";
+                document.getElementById("opcDoorStatus").textContent = data.status ?? "-";
+                document.getElementById("opcCode").textContent = data.code ?? "-";
+                document.getElementById("opcDoorOpen").textContent = data.doorOpen ? "True" : "False";
+                document.getElementById("opcDoorClosed").textContent = data.doorClosed ? "True" : "False";
+                document.getElementById("opcDoorOpenSourceTimestamp").textContent = data.doorOpenSourceTimestamp
                     ? new Date(data.doorOpenSourceTimestamp).toLocaleString()
-                    : "-");
-                setText("opcDoorClosedSourceTimestamp", data.doorClosedSourceTimestamp
+                    : "-";
+                document.getElementById("opcDoorClosedSourceTimestamp").textContent = data.doorClosedSourceTimestamp
                     ? new Date(data.doorClosedSourceTimestamp).toLocaleString()
-                    : "-");
-                setText("opcReadAt", data.readAt
+                    : "-";
+                document.getElementById("opcReadAt").textContent = data.readAt
                     ? new Date(data.readAt).toLocaleString()
-                    : "-");
+                    : "-";
 
                 if (data.errorMessage) {
-                    showError(data.errorMessage);
-                } else if (error) {
+                    error.textContent = data.errorMessage;
+                    error.style.display = "block";
+                } else {
                     error.textContent = "";
                     error.style.display = "none";
                 }
             } catch (e) {
-                showError(e.message || "Unable to read OPC UA status.");
-            } finally {
-                refreshInProgress = false;
+                error.textContent = e.message || "Unable to read OPC UA status.";
+                error.style.display = "block";
             }
         }
 

@@ -2,7 +2,6 @@ namespace HALProcessRecord.ViewModels;
 
 public sealed class OpcUaStatusViewModel
 {
-    public string Furnace { get; set; } = string.Empty;
     public string EndpointUrl { get; set; } = string.Empty;
     public string ConnectionStatus { get; set; } = "Disconnected";
     public string Status { get; set; } = "Unavailable";
