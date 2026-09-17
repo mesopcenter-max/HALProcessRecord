@@ -1,0 +1,455 @@
+@model HALProcessRecord.Models.ProcessRecordEntity
+
+@{
+    ViewData["Title"] = "GE - Process Record";
+    ViewData["HideHalHeader"] = true;
+}
+
+<div class="excel-report">
+
+    <!-- =========================================
+         REPORT HEADER
+    ========================================== -->
+
+    <div class="report-header">
+
+        <div class="report-logo">
+            <img src="~/images/hal-logo.png" alt="HAL Logo" />
+        </div>
+
+        <div class="report-title">
+            <div class="report-title-main">
+                GE - PROCESS RECORD
+            </div>
+
+            <div class="report-title-sub">
+                Ring Rolling Facility | OEM: GE |
+                Manufactured by Hindustan Aeronautics Limited
+            </div>
+        </div>
+
+        <div class="report-document-info">
+            <div>Annexure-2</div>
+            <div>Format No. RR-006, Iss-04</div>
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         BASIC INFORMATION
+    ========================================== -->
+
+    <table class="report-table info-table">
+
+        <tbody>
+
+            <tr>
+                <td class="label-cell">Date :-</td>
+                <td class="value-cell">
+                    @Model.Date.ToString("dd-MM-yyyy")
+                </td>
+
+                <td class="label-cell">Furnace :-</td>
+                <td class="value-cell">
+                    @Model.Furnace
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Part No :-</td>
+                <td class="value-cell">
+                    @Model.PartNo
+                </td>
+
+                <td class="label-cell">Forging Temperature (°C) :-</td>
+                <td class="value-cell">
+                    @Model.ForgingTemperature
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Qty :-</td>
+                <td class="value-cell">
+                    @Model.Qty
+                </td>
+
+                <td class="label-cell">
+                    Temperature Tolerance (°C) +/- :-
+                </td>
+                <td class="value-cell">
+                    @Model.TemperatureTolerance
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Batch No :-</td>
+                <td class="value-cell">
+                    @Model.BatchNo
+                </td>
+
+                <td class="label-cell">Soaking Start temperature :-</td>
+                <td class="value-cell">
+                    @Model.SoakingStartTemperature
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Loading Date :-</td>
+                <td class="value-cell">
+                    @Model.LoadingDate.ToString("dd-MM-yyyy")
+                </td>
+
+                <td class="label-cell">Soaking Hrs (Min) :-</td>
+                <td class="value-cell">
+                    @Model.SoakingMin
+                </td>
+            </tr>
+
+            <tr class="orange-line">
+                <td class="label-cell">Loading Time (Hrs) :-</td>
+                <td class="value-cell">
+                    @Model.LoadingTime
+                </td>
+
+                <td class="label-cell">Soaking Hrs (Max) :-</td>
+                <td class="value-cell">
+                    @Model.SoakingMax
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Soaking start time :-</td>
+                <td class="value-cell">
+                    @Model.SoakingStartTime
+                </td>
+
+                <td class="label-cell">Act operation start time :-</td>
+                <td class="value-cell">
+                    @Model.ActualOperationStartTime
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">Minimum Soaking complete :-</td>
+                <td class="value-cell">
+                    @Model.MinimumSoakingComplete
+                </td>
+
+                <td class="label-cell">Act operation end time :-</td>
+                <td class="value-cell">
+                    @Model.ActualOperationEndTime
+                </td>
+            </tr>
+
+            <tr class="section-border">
+                <td class="label-cell">Operation to end before :-</td>
+                <td class="value-cell">
+                    @Model.OperationEndBefore
+                </td>
+
+                <td class="label-cell">Operator name :-</td>
+                <td class="value-cell">
+                    @Model.OperatorName
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+
+    <!-- =========================================
+         OPERATION / EQUIPMENT
+    ========================================== -->
+
+    <table class="report-table operation-info-table">
+
+        <thead>
+            <tr>
+                <th colspan="2">OPERATION</th>
+                <th colspan="2">EQUIPMENT USED</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td class="operation-name">
+                    Upset &amp; Pierce
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Operation == "Upset & Pierce")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+
+                <td class="equipment-name">
+                    1500 Ton Press
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Equipment == "1500 Ton Press")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+            </tr>
+
+            <tr>
+                <td class="operation-name">
+                    Axial Pressing
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Operation == "Axial Pressing")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+
+                <td class="equipment-name">
+                    3000 Ton Press
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Equipment == "3000 Ton Press")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+            </tr>
+
+            <tr>
+                <td class="operation-name">
+                    Flattening
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Operation == "Flattening")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+
+                <td class="equipment-name">
+                    4000 Ton Press
+                </td>
+
+                <td class="check-cell">
+                    @if (Model.Equipment == "4000 Ton Press")
+                    {
+                        <span class="check">✓</span>
+                    }
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+
+    <!-- =========================================
+         STAGE / MANDREL
+    ========================================== -->
+
+    <table class="report-table stage-table">
+
+        <tbody>
+
+            <tr>
+                <td class="label-cell">
+                    Ring Rolling Stage No :-
+                </td>
+
+                <td class="value-cell">
+                    @Model.RingRollingStageNo
+                </td>
+
+                <td class="label-cell">
+                    Ring Rolling-1 (100/63)
+                </td>
+
+                <td class="value-cell">
+                </td>
+            </tr>
+
+            <tr>
+                <td class="label-cell">
+                    Mandrel Diameter :-
+                </td>
+
+                <td class="value-cell">
+                    @Model.MandrelDiameter
+                </td>
+
+                <td class="label-cell">
+                    Ring Rolling-2 (400/200)
+                </td>
+
+                <td class="value-cell">
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+
+    <!-- =========================================
+         OPERATION TIMES
+    ========================================== -->
+
+    <table class="report-table operation-times">
+
+        <thead>
+
+            <tr>
+                <th rowspan="2" class="sl-column">
+                    SL.<br />No.
+                </th>
+
+                <th colspan="2">
+                    Transfer Time (A)
+                </th>
+
+                <th colspan="2">
+                    Total Time (B)
+                </th>
+
+                <th colspan="2">
+                    Operation Time (A-B)
+                </th>
+
+                <th rowspan="2" class="remarks-column">
+                    Observations / Remarks
+                </th>
+            </tr>
+
+            <tr>
+                <th>Min</th>
+                <th>Sec</th>
+
+                <th>Min</th>
+                <th>Sec</th>
+
+                <th>Min</th>
+                <th>Sec</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            @foreach (var operation in Model.Operations.OrderBy(x => x.SlNo))
+            {
+                <tr>
+
+                    <td class="center">
+                        @operation.SlNo
+                    </td>
+
+                    <td class="center">
+                        @operation.TransferMinutes
+                    </td>
+
+                    <td class="center">
+                        @operation.TransferSeconds
+                    </td>
+
+                    <td class="center">
+                        @operation.TotalMinutes
+                    </td>
+
+                    <td class="center">
+                        @operation.TotalSeconds
+                    </td>
+
+                    <td class="center">
+                        @operation.OperationMinutes
+                    </td>
+
+                    <td class="center">
+                        @operation.OperationSeconds
+                    </td>
+
+                    <td class="remarks">
+                        @operation.Observation
+                    </td>
+
+                </tr>
+            }
+
+        </tbody>
+
+    </table>
+
+
+    <!-- =========================================
+         REMARKS
+    ========================================== -->
+
+    <table class="report-table remarks-table">
+
+        <tbody>
+
+            <tr>
+                <td class="remarks-label">
+                    Other Remarks if any :-
+                </td>
+
+                <td class="remarks-value">
+                    @Model.OtherRemarks
+                </td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+
+    <!-- =========================================
+         SIGNATURES
+    ========================================== -->
+
+    <div class="signature-area">
+
+        <div class="signature">
+            <div class="signature-line"></div>
+            <div>
+                Prepared / Recorded by: @Model.PreparedBy
+            </div>
+        </div>
+
+        <div class="signature">
+            <div class="signature-line"></div>
+            <div>
+                Verified by: @Model.VerifiedBy
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         ACTION BUTTONS
+    ========================================== -->
+
+    <div class="report-actions">
+
+        <a class="report-button download"
+           asp-action="DownloadReport"
+           asp-route-id="@Model.Id">
+            Download Excel
+        </a>
+
+        <a class="report-button back"
+           asp-action="History">
+            Back to History
+        </a>
+
+    </div>
+
+</div>

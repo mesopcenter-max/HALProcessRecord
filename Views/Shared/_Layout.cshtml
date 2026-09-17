@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HAL Process Record</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body>
+    <header class="hal-header">
+
+        <div class="hal-brand-area">
+            <div class="hal-logo-box">
+                <img src="~/images/hal-logo.png" alt="HAL Logo" />
+            </div>
+
+            <div class="hal-title">
+                <div class="hal-title-main">HINDUSTAN AERONAUTICS LIMITED</div>
+                <div class="hal-title-sub">HAL Ring Rolling Process Record</div>
+            </div>
+        </div>
+
+        <nav class="hal-nav">
+            <a asp-controller="ProcessRecord" asp-action="Create">Process Record</a>
+            <a asp-controller="ProcessRecord" asp-action="History">History</a>
+        </nav>
+
+    </header>
+    <main class="container">
+        @RenderBody()
+    </main>
+    <script>
+            function addOperationRow() {
+                const tbody = document.getElementById('operationRows');
+                const index = tbody.children.length;
+                if (index >= 13) {
+                    alert('The supplied Excel template has 13 operation rows.');
+                    return;
+                }
+                const sl = index + 1;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td>${sl}<input type="hidden" name="Operations[${index}].SlNo" value="${sl}" /></td>
+                  <td><input type="number" min="0" name="Operations[${index}].TransferMinutes" /></td>
+                  <td><input type="number" min="0" max="59" name="Operations[${index}].TransferSeconds" /></td>
+                  <td><input type="number" min="0" name="Operations[${index}].TotalMinutes" /></td>
+                  <td><input type="number" min="0" max="59" name="Operations[${index}].TotalSeconds" /></td>
+                  <td class="calculated">Auto</td>
+                  <td class="calculated">Auto</td>
+                  <td><input type="text" name="Operations[${index}].Observation" maxlength="500" /></td>`;
+                tbody.appendChild(tr);
+            }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,260 @@
+@model ProcessRecordViewModel
+@{
+    ViewData["Title"] = "Create Process Record";
+}
+
+<div class="page-head">
+    <div>
+        <h1>GE Process Record</h1>
+        <p>Enter the record values and generate the original Excel template.</p>
+    </div>
+</div>
+
+<form asp-action="Generate" method="post" class="record-form">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="validation"></div>
+
+    <section class="card">
+        <div class="section-title">
+            <h2>Furnace Status</h2>
+            <button type="button" class="secondary" onclick="refreshOpcUaStatus()">Refresh</button>
+        </div>
+        <div class="grid three">
+            <div class="field">
+                <label>Selected Furnace</label>
+                <div id="opcFurnace">@Model.Furnace</div>
+            </div>
+            <div class="field">
+                <label>Connection</label>
+                <div id="opcConnectionStatus">@Model.OpcUa.ConnectionStatus</div>
+            </div>
+            <div class="field">
+                <label>Door Status</label>
+                <div id="opcDoorStatus">@Model.OpcUa.Status</div>
+            </div>
+          
+            <div class="field">
+                <label>Door Open Signal</label>
+                <div id="opcDoorOpen">@Model.OpcUa.DoorOpen</div>
+            </div>
+            <div class="field">
+                <label>Door Close Signal</label>
+                <div id="opcDoorClosed">@Model.OpcUa.DoorClosed</div>
+            </div>
+            <div class="field">
+                <label>Door Open Source Timestamp</label>
+                <div id="opcDoorOpenSourceTimestamp">@(Model.OpcUa.DoorOpenSourceTimestamp?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field">
+                <label>Door Close Source Timestamp</label>
+                <div id="opcDoorClosedSourceTimestamp">@(Model.OpcUa.DoorClosedSourceTimestamp?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field">
+                <label>Last Read</label>
+                <div id="opcReadAt">@(Model.OpcUa.ReadAt?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field wide">
+                <div id="opcError" class="validation" style="display:none"></div>
+            </div>
+        </div>
+      
+    </section>
+
+    <section class="card">
+        <h2>Basic Information</h2>
+        <div class="grid two">
+            <div class="field"><label asp-for="Date"></label><input asp-for="Date" type="date" /><span asp-validation-for="Date"></span></div>
+            <div class="field"><label asp-for="LoadingDate"></label><input asp-for="LoadingDate" type="date" /><span asp-validation-for="LoadingDate"></span></div>
+            <div class="field"><label asp-for="PartNo"></label><input asp-for="PartNo" placeholder="e.g. FD-3100" /><span asp-validation-for="PartNo"></span></div>
+            <div class="field"><label asp-for="Qty"></label><input asp-for="Qty" type="number" min="1" /><span asp-validation-for="Qty"></span></div>
+            <div class="field"><label asp-for="BatchNo"></label><input asp-for="BatchNo" placeholder="e.g. RR25JU73" /><span asp-validation-for="BatchNo"></span></div>
+            <div class="field"><label asp-for="LoadingTime"></label><input asp-for="LoadingTime" type="time" step="60" /><span asp-validation-for="LoadingTime"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Furnace / Soaking</h2>
+        <div class="grid three">
+            <div class="field">
+                <label asp-for="Furnace"></label>
+                <select asp-for="Furnace" id="furnaceSelect">
+                    @foreach (var furnaceName in new[] { "RRP_1", "RRP_2", "RRP_3", "RRP_4", "RRP_5", "RRP_10", "RRP_11", "RRP_12", "RRP_13", "RRP_14", "RRP_15", "RRP_16", "RRP_17", "RRP_18", "RRP_19" })
+                    {
+                        <option value="@furnaceName">@furnaceName</option>
+                    }
+                </select>
+                <span asp-validation-for="Furnace"></span>
+                <small class="hint" id="furnaceEndpoint"></small>
+            </div>
+            <div class="field"><label asp-for="ForgingTemperature"></label><input asp-for="ForgingTemperature" type="number" step="0.1" /><span asp-validation-for="ForgingTemperature"></span></div>
+            <div class="field"><label asp-for="TemperatureTolerance"></label><input asp-for="TemperatureTolerance" type="number" step="0.1" /><span asp-validation-for="TemperatureTolerance"></span></div>
+            <div class="field"><label asp-for="SoakingStartTemperature"></label><input asp-for="SoakingStartTemperature" type="number" step="0.1" /><span asp-validation-for="SoakingStartTemperature"></span></div>
+            <div class="field"><label asp-for="SoakingMin"></label><input asp-for="SoakingMin" type="time" step="60" /><span asp-validation-for="SoakingMin"></span></div>
+            <div class="field"><label asp-for="SoakingMax"></label><input asp-for="SoakingMax" type="time" step="60" /><span asp-validation-for="SoakingMax"></span></div>
+            <div class="field"><label asp-for="SoakingStartTime"></label><input asp-for="SoakingStartTime" type="time" step="60" /><span asp-validation-for="SoakingStartTime"></span></div>
+            <div class="field"><label asp-for="MinimumSoakingComplete"></label><input asp-for="MinimumSoakingComplete" type="time" step="60" /><span asp-validation-for="MinimumSoakingComplete"></span></div>
+            <div class="field"><label asp-for="OperationEndBefore"></label><input asp-for="OperationEndBefore" type="time" step="60" /><span asp-validation-for="OperationEndBefore"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Actual Operation</h2>
+        <div class="grid three">
+            <div class="field"><label asp-for="ActualOperationStartTime"></label><input asp-for="ActualOperationStartTime" type="time" step="60" /><span asp-validation-for="ActualOperationStartTime"></span></div>
+            <div class="field"><label asp-for="ActualOperationEndTime"></label><input asp-for="ActualOperationEndTime" type="time" step="60" /><span asp-validation-for="ActualOperationEndTime"></span></div>
+            <div class="field"><label asp-for="OperatorName"></label><input asp-for="OperatorName" /><span asp-validation-for="OperatorName"></span></div>
+            <div class="field"><label asp-for="Operation"></label><select asp-for="Operation"><option>Upset &amp; Pierce</option><option>Axial Pressing</option><option>Flattening</option></select></div>
+            <div class="field"><label asp-for="Equipment"></label><select asp-for="Equipment"><option>1500 Ton Press</option><option>3000 Ton Press</option><option>4000 Ton Press</option></select></div>
+            <div class="field"><label asp-for="RingRollingStageNo"></label><input asp-for="RingRollingStageNo" placeholder="e.g. 1" /><span asp-validation-for="RingRollingStageNo"></span></div>
+            <div class="field"><label asp-for="MandrelDiameter"></label><input asp-for="MandrelDiameter" type="number" step="0.1" /><span asp-validation-for="MandrelDiameter"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        
+        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>SL</th><th>Transfer Min</th><th>Transfer Sec</th><th>Total Min</th><th>Total Sec</th><th>Operation Min</th><th>Operation Sec</th><th>Observation / Remarks</th></tr></thead>
+                <tbody id="operationRows">
+                @for (var i = 0; i < Model.Operations.Count; i++)
+                {
+                    <tr>
+                        <td>@(i + 1)<input type="hidden" asp-for="Operations[i].SlNo" /></td>
+                        <td><input asp-for="Operations[i].TransferMinutes" type="number" min="0" /></td>
+                        <td><input asp-for="Operations[i].TransferSeconds" type="number" min="0" max="59" /></td>
+                        <td><input asp-for="Operations[i].TotalMinutes" type="number" min="0" /></td>
+                        <td><input asp-for="Operations[i].TotalSeconds" type="number" min="0" max="59" /></td>
+                        <td class="calculated">Auto</td>
+                        <td class="calculated">Auto</td>
+                        <td><input asp-for="Operations[i].Observation" maxlength="500" /></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Remarks / Verification</h2>
+        <div class="grid three">
+            <div class="field wide"><label asp-for="OtherRemarks"></label><textarea asp-for="OtherRemarks" rows="3"></textarea></div>
+            <div class="field"><label asp-for="PreparedBy"></label><input asp-for="PreparedBy" /></div>
+            <div class="field"><label asp-for="VerifiedBy"></label><input asp-for="VerifiedBy" /></div>
+        </div>
+    </section>
+
+<div class="actions">
+    <button type="submit" class="primary">
+        Generate Excel
+    </button>
+
+    <a class="secondary button" asp-action="Create">
+        Clear Form
+    </a>
+</div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const furnaceEndpoints = {
+            RRP_1: "opc.tcp://172.133.63.150:4840",
+            RRP_2: "opc.tcp://172.133.63.151:4840",
+            RRP_3: "opc.tcp://172.133.63.152:4840",
+            RRP_4: "opc.tcp://172.133.63.153:4840",
+            RRP_5: "opc.tcp://172.133.63.154:4840",
+            RRP_10: "opc.tcp://172.133.63.156:4840",
+            RRP_11: "opc.tcp://172.133.63.157:4840",
+            RRP_12: "opc.tcp://172.133.63.158:4840",
+            RRP_13: "opc.tcp://172.133.63.159:4840",
+            RRP_14: "opc.tcp://172.133.63.160:4840",
+            RRP_15: "opc.tcp://172.133.63.161:4840",
+            RRP_16: "opc.tcp://172.133.63.162:4840",
+            RRP_17: "opc.tcp://172.133.63.163:4840",
+            RRP_18: "opc.tcp://172.133.63.164:4840",
+            RRP_19: "opc.tcp://172.133.63.165:4840"
+        };
+
+        function updateFurnaceEndpoint() {
+            const furnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("furnaceEndpoint").textContent = furnaceEndpoints[furnace] || "";
+        }
+
+        document.getElementById("furnaceSelect").addEventListener("change", () => {
+            updateFurnaceEndpoint();
+            refreshOpcUaStatus();
+        });
+        updateFurnaceEndpoint();
+
+        let refreshInProgress = false;
+
+        async function refreshOpcUaStatus() {
+            if (refreshInProgress) {
+                return;
+            }
+
+            refreshInProgress = true;
+            const error = document.getElementById("opcError");
+            const furnace = document.getElementById("furnaceSelect").value;
+            const setText = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            };
+            const showError = (message) => {
+                if (error) {
+                    error.textContent = message;
+                    error.style.display = "block";
+                }
+            };
+
+            try {
+                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(furnace), {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Unable to read OPC UA status.");
+                }
+
+                const data = await response.json();
+
+                if (document.getElementById("furnaceSelect").value !== furnace) {
+                    return;
+                }
+
+                setText("opcFurnace", data.furnace ?? furnace);
+                setText("opcConnectionStatus", data.connectionStatus ?? "-");
+                setText("opcDoorStatus", data.status ?? "-");
+                setText("opcCode", data.code ?? "-");
+                setText("opcDoorOpen", data.doorOpen ? "True" : "False");
+                setText("opcDoorClosed", data.doorClosed ? "True" : "False");
+                setText("opcDoorOpenSourceTimestamp", data.doorOpenSourceTimestamp
+                    ? new Date(data.doorOpenSourceTimestamp).toLocaleString()
+                    : "-");
+                setText("opcDoorClosedSourceTimestamp", data.doorClosedSourceTimestamp
+                    ? new Date(data.doorClosedSourceTimestamp).toLocaleString()
+                    : "-");
+                setText("opcReadAt", data.readAt
+                    ? new Date(data.readAt).toLocaleString()
+                    : "-");
+
+                if (data.errorMessage) {
+                    showError(data.errorMessage);
+                } else if (error) {
+                    error.textContent = "";
+                    error.style.display = "none";
+                }
+            } catch (e) {
+                showError(e.message || "Unable to read OPC UA status.");
+            } finally {
+                refreshInProgress = false;
+            }
+        }
+
+        // Keep the displayed PLC status current while the page is open.
+        setInterval(refreshOpcUaStatus, 5000);
+    </script>
+}
