@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HAL Process Record</title>
+    <link rel="stylesheet" href="/css/site.css?v=9QhytZK9Lf6S4HQICgEcMjLYIQvscS5kYZeYPl7-0NA" />
+</head>
+
+<body>
+    <header class="hal-header">
+
+        <div class="hal-brand-area">
+            <div class="hal-logo-box">
+                <img src="/images/hal-logo.png" alt="HAL Logo" />
+            </div>
+
+            <div class="hal-title">
+                <div class="hal-title-main">HINDUSTAN AERONAUTICS LIMITED</div>
+                <div class="hal-title-sub">HAL Ring Rolling Process Record</div>
+            </div>
+        </div>
+
+        <nav class="hal-nav">
+            <a href="/">Process Record</a>
+            <a href="/ProcessRecord/History">History</a>
+        </nav>
+
+    </header>
+    <main class="container">
+        
+<div class="page-head">
+    <div>
+        <h1>Process Record</h1>
+        <p>Enter the record values and generate the original Excel template.</p>
+    </div>
+</div>
+
+<form method="post" class="record-form" action="/ProcessRecord/Generate">
+    
+    
+
+    <section class="card">
+        <div class="section-title">
+            <h2>Furnace Status</h2>
+            <button type="button" class="secondary" onclick="refreshOpcUaStatus()">Refresh</button>
+        </div>
+        <div class="grid three">
+            <div class="field">
+                <label>Connection</label>
+                <div id="opcConnectionStatus">Disconnected</div>
+            </div>
+            <div class="field">
+                <label>Door Status</label>
+                <div id="opcDoorStatus">Unavailable</div>
+            </div>
+            <div class="field">
+                <label> Furnace</label>
+                <div id="opcCode">RRP_10</div>
+            </div>
+            <div class="field">
+                <label>Door Open Signal</label>
+                <div id="opcDoorOpen">False</div>
+            </div>
+            <div class="field">
+                <label>Door Close Signal</label>
+                <div id="opcDoorClosed">False</div>
+            </div>
+            <div class="field">
+                <label>Door Open Source Timestamp</label>
+                <div id="opcDoorOpenSourceTimestamp">-</div>
+            </div>
+            <div class="field">
+                <label>Door Close Source Timestamp</label>
+                <div id="opcDoorClosedSourceTimestamp">-</div>
+            </div>
+            <div class="field">
+                <label>Last Read</label>
+                <div id="opcReadAt">-</div>
+            </div>
+            <div class="field wide">
+                <div id="opcError" class="validation" style="display:none"></div>
+            </div>
+        </div>
+      
+    </section>
+
+    <section class="card">
+        <div class="section-title">
+            <h2>Ring Rolling Status</h2>
+            <button type="button" class="secondary" onclick="refreshRingRollingStatus()">Refresh</button>
+        </div>
+        <div class="grid three">
+            <div class="field">
+                <label>Ring Rolling Stage Machine</label>
+                <select id="ringRollingMachine" data-val="true" data-val-required="The Machine field is required." name="Machine">
+                    <option value="MRB_3000" selected="selected">MRB_3000</option>
+                    <option value="MRB_3001">MRB_3001</option>
+                </select>
+                <small class="hint" id="ringRollingEndpoint"></small>
+            </div>
+            <div class="field"><label>Connection</label><div id="ringConnectionStatus">Disconnected</div></div>
+            <div class="field"><label>Mode</label><div id="ringMode">Waiting</div></div>
+            <div class="field"><label>Auto start LED</label><div id="ringAutoStartLED">False</div></div>
+            <div class="field"><label>Auto stop LED</label><div id="ringAutoStopLED">False</div></div>
+            <div class="field"><label>Auto start PB</label><div id="ringAutoStartPB">False</div></div>
+            <div class="field"><label>Auto stop PB</label><div id="ringAutoStopPB">False</div></div>
+            <div class="field"><label>Material Force</label><div id="ringMaterialForce">0.0</div></div>
+            <div class="field"><label>Material Temperature</label><div id="ringMaterialTemperature">0.0</div></div>
+            <div class="field"><label>Last Read</label><div id="ringReadAt">-</div></div>
+            <div class="field"><label>Transfer Time</label><div id="ringTransferTime">00:00:00</div></div>
+            <div class="field"><label>Total Time</label><div id="ringTotalTime">00:00:00</div></div>
+            <div class="field"><label>Operation Time</label><div id="ringOperationTime">00:00:00</div></div>
+            <div class="field"><label>Furnace Door Open Event (OPC UA source time)</label><div id="ringDoorOpenSourceTimestamp">-</div></div>
+            <div class="field"><label>Furnace Door Close Event (OPC UA source time)</label><div id="ringDoorClosedSourceTimestamp">-</div></div>
+            <div class="field"><label>Machine Auto Start LED Event (OPC UA source time)</label><div id="ringAutoStartLEDSourceTimestamp">-</div></div>
+            <div class="field"><label>Machine Auto Start PB Event (OPC UA source time)</label><div id="ringAutoStartPBSourceTimestamp">-</div></div>
+            <div class="field"><label>Machine Auto Stop LED Event (OPC UA source time)</label><div id="ringAutoStopLEDSourceTimestamp">-</div></div>
+            <div class="field"><label>Machine Auto Stop PB Event (OPC UA source time)</label><div id="ringAutoStopPBSourceTimestamp">-</div></div>
+            <div class="field wide"><div id="ringError" class="validation" style="display:none"></div></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Basic Information</h2>
+        <div class="grid two">
+            <div class="field"><label for="Date">Date</label><input type="date" data-val="true" data-val-required="The Date field is required." id="Date" name="Date" value="2026-09-21" /><input name="__Invariant" type="hidden" value="Date" /><span class="field-validation-valid" data-valmsg-for="Date" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="LoadingDate">Loading Date</label><input type="date" data-val="true" data-val-required="The Loading Date field is required." id="LoadingDate" name="LoadingDate" value="2026-09-21" /><input name="__Invariant" type="hidden" value="LoadingDate" /><span class="field-validation-valid" data-valmsg-for="LoadingDate" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="PartNo">Part No</label><input placeholder="e.g. FD-3100" type="text" data-val="true" data-val-required="The Part No field is required." id="PartNo" name="PartNo" value="TEST" /><span class="field-validation-valid" data-valmsg-for="PartNo" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="Qty">Qty</label><input type="number" min="1" data-val="true" data-val-range="The field Qty must be between 1 and 2147483647." data-val-range-max="2147483647" data-val-range-min="1" data-val-required="The Qty field is required." id="Qty" name="Qty" value="1" /><input name="__Invariant" type="hidden" value="Qty" /><span class="field-validation-valid" data-valmsg-for="Qty" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="BatchNo">Batch No</label><input placeholder="e.g. RR25JU73" type="text" data-val="true" data-val-required="The Batch No field is required." id="BatchNo" name="BatchNo" value="TEST-BATCH" /><span class="field-validation-valid" data-valmsg-for="BatchNo" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="LoadingTime">Loading Time</label><input type="time" step="60" data-val="true" data-val-required="The Loading Time field is required." id="LoadingTime" name="LoadingTime" value="14:00" /><input name="__Invariant" type="hidden" value="LoadingTime" /><span class="field-validation-valid" data-valmsg-for="LoadingTime" data-valmsg-replace="true"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Furnace / Soaking</h2>
+        <div class="grid three">
+            <div class="field">
+                <label for="Furnace">Furnace</label>
+                <select id="furnaceSelect" data-val="true" data-val-required="The Furnace field is required." name="Furnace">
+                        <option value="RRP_1">RRP_1</option>
+                        <option value="RRP_2">RRP_2</option>
+                        <option value="RRP_3">RRP_3</option>
+                        <option value="RRP_4">RRP_4</option>
+                        <option value="RRP_5">RRP_5</option>
+                        <option value="RRP_10" selected="selected">RRP_10</option>
+                        <option value="RRP_11">RRP_11</option>
+                        <option value="RRP_12">RRP_12</option>
+                        <option value="RRP_13">RRP_13</option>
+                        <option value="RRP_14">RRP_14</option>
+                        <option value="RRP_15">RRP_15</option>
+                        <option value="RRP_16">RRP_16</option>
+                        <option value="RRP_17">RRP_17</option>
+                        <option value="RRP_18">RRP_18</option>
+                        <option value="RRP_19">RRP_19</option>
+                </select>
+                <span class="field-validation-valid" data-valmsg-for="Furnace" data-valmsg-replace="true"></span>
+                <small class="hint" id="furnaceEndpoint"></small>
+            </div>
+            <div class="field"><label for="ForgingTemperature">ForgingTemperature</label><input type="number" step="0.1" data-val="true" data-val-number="The field ForgingTemperature must be a number." data-val-range="The field ForgingTemperature must be between 0 and 5000." data-val-range-max="5000" data-val-range-min="0" data-val-required="The ForgingTemperature field is required." id="ForgingTemperature" name="ForgingTemperature" value="1000" /><input name="__Invariant" type="hidden" value="ForgingTemperature" /><span class="field-validation-valid" data-valmsg-for="ForgingTemperature" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="TemperatureTolerance">TemperatureTolerance</label><input type="number" step="0.1" data-val="true" data-val-number="The field TemperatureTolerance must be a number." data-val-range="The field TemperatureTolerance must be between 0 and 1000." data-val-range-max="1000" data-val-range-min="0" data-val-required="The TemperatureTolerance field is required." id="TemperatureTolerance" name="TemperatureTolerance" value="14" /><input name="__Invariant" type="hidden" value="TemperatureTolerance" /><span class="field-validation-valid" data-valmsg-for="TemperatureTolerance" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="SoakingStartTemperature">SoakingStartTemperature</label><input type="number" step="0.1" data-val="true" data-val-number="The field SoakingStartTemperature must be a number." data-val-range="The field SoakingStartTemperature must be between 0 and 5000." data-val-range-max="5000" data-val-range-min="0" data-val-required="The SoakingStartTemperature field is required." id="SoakingStartTemperature" name="SoakingStartTemperature" value="986" /><input name="__Invariant" type="hidden" value="SoakingStartTemperature" /><span class="field-validation-valid" data-valmsg-for="SoakingStartTemperature" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="SoakingMin">SoakingMin</label><input type="time" step="60" data-val="true" data-val-required="The SoakingMin field is required." id="SoakingMin" name="SoakingMin" value="01:00:00" /><input name="__Invariant" type="hidden" value="SoakingMin" /><span class="field-validation-valid" data-valmsg-for="SoakingMin" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="SoakingMax">SoakingMax</label><input type="time" step="60" data-val="true" data-val-required="The SoakingMax field is required." id="SoakingMax" name="SoakingMax" value="03:00:00" /><input name="__Invariant" type="hidden" value="SoakingMax" /><span class="field-validation-valid" data-valmsg-for="SoakingMax" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="SoakingStartTime">SoakingStartTime</label><input type="time" step="60" data-val="true" data-val-required="The SoakingStartTime field is required." id="SoakingStartTime" name="SoakingStartTime" value="00:00:00" /><input name="__Invariant" type="hidden" value="SoakingStartTime" /><span class="field-validation-valid" data-valmsg-for="SoakingStartTime" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="MinimumSoakingComplete">MinimumSoakingComplete</label><input type="time" step="60" data-val="true" data-val-required="The MinimumSoakingComplete field is required." id="MinimumSoakingComplete" name="MinimumSoakingComplete" value="00:00:00" /><input name="__Invariant" type="hidden" value="MinimumSoakingComplete" /><span class="field-validation-valid" data-valmsg-for="MinimumSoakingComplete" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="OperationEndBefore">OperationEndBefore</label><input type="time" step="60" data-val="true" data-val-required="The OperationEndBefore field is required." id="OperationEndBefore" name="OperationEndBefore" value="00:00:00" /><input name="__Invariant" type="hidden" value="OperationEndBefore" /><span class="field-validation-valid" data-valmsg-for="OperationEndBefore" data-valmsg-replace="true"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Actual Operation</h2>
+        <div class="grid three">
+            <div class="field"><label for="ActualOperationStartTime">ActualOperationStartTime</label><input type="time" step="60" data-val="true" data-val-required="The ActualOperationStartTime field is required." id="ActualOperationStartTime" name="ActualOperationStartTime" value="00:00:00" /><input name="__Invariant" type="hidden" value="ActualOperationStartTime" /><span class="field-validation-valid" data-valmsg-for="ActualOperationStartTime" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="ActualOperationEndTime">ActualOperationEndTime</label><input type="time" step="60" data-val="true" data-val-required="The ActualOperationEndTime field is required." id="ActualOperationEndTime" name="ActualOperationEndTime" value="00:00:00" /><input name="__Invariant" type="hidden" value="ActualOperationEndTime" /><span class="field-validation-valid" data-valmsg-for="ActualOperationEndTime" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="OperatorName">OperatorName</label><input type="text" data-val="true" data-val-required="The OperatorName field is required." id="OperatorName" name="OperatorName" value="Test" /><span class="field-validation-valid" data-valmsg-for="OperatorName" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="Operation">Operation</label><select data-val="true" data-val-required="The Operation field is required." id="Operation" name="Operation"><option selected="selected">Upset &amp; Pierce</option><option>Axial Pressing</option><option>Flattening</option></select></div>
+            <div class="field"><label for="Equipment">Equipment</label><select data-val="true" data-val-required="The Equipment field is required." id="Equipment" name="Equipment"><option selected="selected">1500 Ton Press</option><option>3000 Ton Press</option><option>4000 Ton Press</option></select></div>
+            <div class="field"><label for="RingRollingStageNo">RingRollingStageNo</label><input placeholder="e.g. 1" type="text" data-val="true" data-val-required="The RingRollingStageNo field is required." id="RingRollingStageNo" name="RingRollingStageNo" value="1" /><span class="field-validation-valid" data-valmsg-for="RingRollingStageNo" data-valmsg-replace="true"></span></div>
+            <div class="field"><label for="MandrelDiameter">MandrelDiameter</label><input type="number" step="0.1" data-val="true" data-val-number="The field MandrelDiameter must be a number." data-val-range="The field MandrelDiameter must be between 0 and 10000." data-val-range-max="10000" data-val-range-min="0" id="MandrelDiameter" name="MandrelDiameter" value="10" /><input name="__Invariant" type="hidden" value="MandrelDiameter" /><span class="field-validation-valid" data-valmsg-for="MandrelDiameter" data-valmsg-replace="true"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="section-title"><h2>Operation Times</h2><button type="button" class="secondary" onclick="addOperationRow()">+ Add Row</button></div>
+        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time, matching the sample values in the supplied template.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>SL</th><th>Transfer Min</th><th>Transfer Sec</th><th>Total Min</th><th>Total Sec</th><th>Operation Min</th><th>Operation Sec</th><th>Observation / Remarks</th></tr></thead>
+                <tbody id="operationRows">
+                    <tr>
+                        <td>1<input type="hidden" data-val="true" data-val-required="The SlNo field is required." id="Operations_0__SlNo" name="Operations[0].SlNo" value="1" /></td>
+                        <td><input type="number" min="0" readonly data-automatic-timing="true" data-val="true" data-val-range="The field TransferMinutes must be between 0 and 999." data-val-range-max="999" data-val-range-min="0" data-val-required="The TransferMinutes field is required." id="Operations_0__TransferMinutes" name="Operations[0].TransferMinutes" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].TransferMinutes" /></td>
+                        <td><input type="number" min="0" max="59" readonly data-automatic-timing="true" data-val="true" data-val-range="The field TransferSeconds must be between 0 and 59." data-val-range-max="59" data-val-range-min="0" data-val-required="The TransferSeconds field is required." id="Operations_0__TransferSeconds" name="Operations[0].TransferSeconds" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].TransferSeconds" /></td>
+                        <td><input type="number" min="0" readonly data-automatic-timing="true" data-val="true" data-val-range="The field TotalMinutes must be between 0 and 999." data-val-range-max="999" data-val-range-min="0" data-val-required="The TotalMinutes field is required." id="Operations_0__TotalMinutes" name="Operations[0].TotalMinutes" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].TotalMinutes" /></td>
+                        <td><input type="number" min="0" max="59" readonly data-automatic-timing="true" data-val="true" data-val-range="The field TotalSeconds must be between 0 and 59." data-val-range-max="59" data-val-range-min="0" data-val-required="The TotalSeconds field is required." id="Operations_0__TotalSeconds" name="Operations[0].TotalSeconds" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].TotalSeconds" /></td>
+                        <td><input type="number" min="0" readonly data-automatic-timing="true" data-val="true" data-val-required="The OperationMinutes field is required." id="Operations_0__OperationMinutes" name="Operations[0].OperationMinutes" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].OperationMinutes" /></td>
+                        <td><input type="number" min="0" max="59" readonly data-automatic-timing="true" data-val="true" data-val-required="The OperationSeconds field is required." id="Operations_0__OperationSeconds" name="Operations[0].OperationSeconds" value="0" /><input name="__Invariant" type="hidden" value="Operations[0].OperationSeconds" /></td>
+                        <td><input maxlength="500" type="text" class="input-validation-error" data-val="true" data-val-required="The Observation field is required." id="Operations_0__Observation" name="Operations[0].Observation" value="" /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Remarks / Verification</h2>
+        <div class="grid three">
+            <div class="field wide"><label for="OtherRemarks">OtherRemarks</label><textarea rows="3" class="input-validation-error" data-val="true" data-val-required="The OtherRemarks field is required." id="OtherRemarks" name="OtherRemarks">
+</textarea></div>
+            <div class="field"><label for="PreparedBy">PreparedBy</label><input type="text" data-val="true" data-val-required="The PreparedBy field is required." id="PreparedBy" name="PreparedBy" value="Test" /></div>
+            <div class="field"><label for="VerifiedBy">VerifiedBy</label><input type="text" data-val="true" data-val-required="The VerifiedBy field is required." id="VerifiedBy" name="VerifiedBy" value="Test" /></div>
+        </div>
+    </section>
+
+<div class="actions">
+    <button type="submit" class="primary">
+        Generate Excel
+    </button>
+
+    <a class="secondary button" href="/">
+        Clear Form
+    </a>
+</div>
+<input name="__RequestVerificationToken" type="hidden" value="CfDJ8KnzrKMFNHlFu62ZzW12_FSH0vTFxrjvduB3jL0xQzNORXCy4irHb3nFnPf_m0jIQ_KqiFLM-3kEu1RshDkohOk1N-VZ3JFUffZiDQ5yGoZVJ0nTlW1KzMSP2mt3HOMZgzUQr2K2pTiiLUm0MMETIYc" /></form>
+
+
+    </main>
+    <script>
+            function addOperationRow() {
+                const tbody = document.getElementById('operationRows');
+                const index = tbody.children.length;
+                if (index >= 13) {
+                    alert('The supplied Excel template has 13 operation rows.');
+                    return;
+                }
+                const sl = index + 1;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                  <td>${sl}<input type="hidden" name="Operations[${index}].SlNo" value="${sl}" /></td>
+                  <td><input type="number" min="0" name="Operations[${index}].TransferMinutes" /></td>
+                  <td><input type="number" min="0" max="59" name="Operations[${index}].TransferSeconds" /></td>
+                  <td><input type="number" min="0" name="Operations[${index}].TotalMinutes" /></td>
+                  <td><input type="number" min="0" max="59" name="Operations[${index}].TotalSeconds" /></td>
+                  <td class="calculated">Auto</td>
+                  <td class="calculated">Auto</td>
+                  <td><input type="text" name="Operations[${index}].Observation" maxlength="500" /></td>`;
+                tbody.appendChild(tr);
+            }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.20.0/dist/jquery.validate.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation-unobtrusive@4.0.0/dist/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        const furnaceEndpoints = {
+            RRP_1: "opc.tcp://172.133.63.150:4840",
+            RRP_2: "opc.tcp://172.133.63.151:4840",
+            RRP_3: "opc.tcp://172.133.63.152:4840",
+            RRP_4: "opc.tcp://172.133.63.153:4840",
+            RRP_5: "opc.tcp://172.133.63.154:4840",
+            RRP_10: "opc.tcp://172.133.63.156:4840",
+            RRP_11: "opc.tcp://172.133.63.157:4840",
+            RRP_12: "opc.tcp://172.133.63.158:4840",
+            RRP_13: "opc.tcp://172.133.63.159:4840",
+            RRP_14: "opc.tcp://172.133.63.160:4840",
+            RRP_15: "opc.tcp://172.133.63.161:4840",
+            RRP_16: "opc.tcp://172.133.63.162:4840",
+            RRP_17: "opc.tcp://172.133.63.163:4840",
+            RRP_18: "opc.tcp://172.133.63.164:4840",
+            RRP_19: "opc.tcp://172.133.63.165:4840"
+        };
+
+        function updateFurnaceEndpoint() {
+            const furnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("furnaceEndpoint").textContent = furnaceEndpoints[furnace] || "";
+        }
+
+        document.getElementById("furnaceSelect").addEventListener("change", () => {
+            updateFurnaceEndpoint();
+            refreshOpcUaStatus();
+            refreshTimingStatus();
+        });
+        updateFurnaceEndpoint();
+
+        async function refreshOpcUaStatus() {
+            const error = document.getElementById("opcError");
+            const selectedFurnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("opcCode").textContent = selectedFurnace;
+
+            try {
+                const response = await fetch('/ProcessRecord/OpcUaStatus?furnace=' + encodeURIComponent(selectedFurnace), {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Unable to read OPC UA status.");
+                }
+
+                const data = await response.json();
+
+                document.getElementById("opcCode").textContent = selectedFurnace;
+                document.getElementById("opcConnectionStatus").textContent = data.connectionStatus ?? "-";
+                if (data.connectionStatus === "Connected") {
+                    document.getElementById("opcDoorStatus").textContent = data.status ?? "-";
+                    document.getElementById("opcCode").textContent = data.code ?? "-";
+                    document.getElementById("opcDoorOpen").textContent = data.doorOpen ? "True" : "False";
+                    document.getElementById("opcDoorClosed").textContent = data.doorClosed ? "True" : "False";
+                    document.getElementById("opcDoorOpenSourceTimestamp").textContent = formatTimestamp(data.doorOpenSourceTimestamp);
+                    furnaceDoorOpenedAt = data.doorOpenSourceTimestamp ? new Date(data.doorOpenSourceTimestamp) : null;
+                    document.getElementById("opcDoorClosedSourceTimestamp").textContent = formatTimestamp(data.doorClosedSourceTimestamp);
+                    document.getElementById("opcReadAt").textContent = formatTimestamp(data.readAt);
+                }
+
+                if (data.errorMessage) {
+                    error.textContent = data.errorMessage;
+                    error.style.display = "block";
+                } else {
+                    error.textContent = "";
+                    error.style.display = "none";
+                }
+            } catch (e) {
+                error.textContent = e.message || "Unable to read OPC UA status.";
+                error.style.display = "block";
+            }
+        }
+
+        const ringRollingEndpoints = {
+            MRB_3000: "opc.tcp://172.133.78.30:4840",
+            MRB_3001: "opc.tcp://172.133.78.31:4840"
+        };
+        let furnaceDoorOpenedAt = null;
+        let ringPrevious = null;
+        let ringStartAt = null;
+        let ringStoppedAt = null;
+        let ringMode = "Waiting";
+
+        function formatDuration(milliseconds) {
+            const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+            return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+                .map(value => String(value).padStart(2, "0")).join(":");
+        }
+
+        function formatTimestamp(value) {
+            if (!value) return "-";
+
+            const timestamp = new Date(value);
+            return [
+                String(timestamp.getHours()).padStart(2, "0"),
+                String(timestamp.getMinutes()).padStart(2, "0"),
+                String(timestamp.getSeconds()).padStart(2, "0")
+            ].join(":") + ":" + String(timestamp.getMilliseconds()).padStart(3, "0");
+        }
+
+        function formatSourceTimestamp(value) {
+            if (!value) return "-";
+            return formatTimestamp(value);
+        }
+
+        function updateRingTimers() {
+            refreshTimingStatus();
+        }
+
+        function updateRingRollingEndpoint() {
+            const machine = document.getElementById("ringRollingMachine").value;
+            document.getElementById("ringRollingEndpoint").textContent = ringRollingEndpoints[machine] || "";
+        }
+
+        async function refreshRingRollingStatus() {
+            const machine = document.getElementById("ringRollingMachine").value;
+            const error = document.getElementById("ringError");
+            try {
+                const response = await fetch('/ProcessRecord/RingRollingOpcUaStatus?machine=' + encodeURIComponent(machine), { cache: "no-store" });
+                if (!response.ok) throw new Error("Unable to read ring rolling OPC UA status.");
+                const data = await response.json();
+                const automaticStart = (data.autoStartLED || data.autoStartPB) && !(ringPrevious && (ringPrevious.autoStartLED || ringPrevious.autoStartPB));
+                const manualStart = Number(data.materialForce) >= 20 && (!ringPrevious || Number(ringPrevious.materialForce) < 20);
+                const stop = data.autoStopLED || data.autoStopPB;
+                if (automaticStart && !ringStartAt) { ringStartAt = new Date(); ringMode = "Automatic"; ringStoppedAt = null; }
+                if (manualStart && !ringStartAt) { ringStartAt = new Date(); ringMode = "Manual"; ringStoppedAt = null; }
+                if (stop && ringStartAt && !ringStoppedAt) ringStoppedAt = new Date();
+                ringPrevious = data;
+                document.getElementById("ringConnectionStatus").textContent = data.connectionStatus ?? "-";
+                document.getElementById("ringMode").textContent = ringMode;
+                if (data.connectionStatus === "Connected") {
+                    document.getElementById("ringAutoStartLED").textContent = data.autoStartLED ? "True" : "False";
+                    document.getElementById("ringAutoStopLED").textContent = data.autoStopLED ? "True" : "False";
+                    document.getElementById("ringAutoStartPB").textContent = data.autoStartPB ? "True" : "False";
+                    document.getElementById("ringAutoStopPB").textContent = data.autoStopPB ? "True" : "False";
+                    document.getElementById("ringMaterialForce").textContent = Number(data.materialForce || 0).toFixed(1);
+                    document.getElementById("ringMaterialTemperature").textContent = Number(data.materialTemperature || 0).toFixed(1);
+                    document.getElementById("ringReadAt").textContent = formatTimestamp(data.readAt);
+                    document.getElementById("ringAutoStartLEDSourceTimestamp").textContent = formatSourceTimestamp(data.autoStartLEDSourceTimestamp);
+                    document.getElementById("ringAutoStartPBSourceTimestamp").textContent = formatSourceTimestamp(data.autoStartPBSourceTimestamp);
+                    document.getElementById("ringAutoStopLEDSourceTimestamp").textContent = formatSourceTimestamp(data.autoStopLEDSourceTimestamp);
+                    document.getElementById("ringAutoStopPBSourceTimestamp").textContent = formatSourceTimestamp(data.autoStopPBSourceTimestamp);
+                }
+                error.textContent = data.errorMessage || "";
+                error.style.display = data.errorMessage ? "block" : "none";
+                refreshTimingStatus();
+            } catch (e) {
+                error.textContent = e.message || "Unable to read ring rolling OPC UA status.";
+                error.style.display = "block";
+            }
+        }
+
+        document.getElementById("ringRollingMachine").addEventListener("change", () => {
+            ringPrevious = null; ringStartAt = null; ringStoppedAt = null; ringMode = "Waiting";
+            updateRingRollingEndpoint();
+            refreshRingRollingStatus();
+            refreshTimingStatus();
+        });
+
+        function setTimingInput(name, value) {
+            const input = document.querySelector(`[name="Operations[0].${name}"]`);
+            if (input) input.value = value;
+        }
+
+        function setTiming(totalSeconds, transferSeconds) {
+            const totalMinutes = Math.floor(totalSeconds / 60);
+            const totalRemainder = totalSeconds % 60;
+            const transferMinutes = Math.floor(transferSeconds / 60);
+            const transferRemainder = transferSeconds % 60;
+            const operationSeconds = Math.max(0, totalSeconds - transferSeconds);
+
+            setTimingInput("TransferMinutes", transferMinutes);
+            setTimingInput("TransferSeconds", transferRemainder);
+            setTimingInput("TotalMinutes", totalMinutes);
+            setTimingInput("TotalSeconds", totalRemainder);
+            setTimingInput("OperationMinutes", Math.floor(operationSeconds / 60));
+            setTimingInput("OperationSeconds", operationSeconds % 60);
+            document.getElementById("ringTransferTime").textContent = formatDuration(transferSeconds * 1000);
+            document.getElementById("ringTotalTime").textContent = formatDuration(totalSeconds * 1000);
+            document.getElementById("ringOperationTime").textContent = formatDuration(operationSeconds * 1000);
+        }
+
+        async function refreshTimingStatus() {
+            const furnace = document.getElementById("furnaceSelect").value;
+            const machine = document.getElementById("ringRollingMachine").value;
+            try {
+                const response = await fetch('/ProcessRecord/TimingStatus?furnace=' + encodeURIComponent(furnace) + '&machine=' + encodeURIComponent(machine), { cache: "no-store" });
+                if (!response.ok) return;
+                const data = await response.json();
+                setTiming(Number(data.totalSeconds || 0), Number(data.transferSeconds || 0));
+                document.getElementById("ringMode").textContent = data.startMode || (data.isActive ? "Running" : "Waiting");
+                document.getElementById("ringAutoStartLED").textContent = data.lastAutoStartLED == null ? "-" : (data.lastAutoStartLED ? "True" : "False");
+                document.getElementById("ringAutoStopLED").textContent = data.lastAutoStopLED == null ? "-" : (data.lastAutoStopLED ? "True" : "False");
+                document.getElementById("ringAutoStartPB").textContent = data.lastAutoStartPB == null ? "-" : (data.lastAutoStartPB ? "True" : "False");
+                document.getElementById("ringAutoStopPB").textContent = data.lastAutoStopPB == null ? "-" : (data.lastAutoStopPB ? "True" : "False");
+                document.getElementById("ringMaterialForce").textContent = Number(data.lastMaterialForce || 0).toFixed(1);
+                document.getElementById("ringMaterialTemperature").textContent = Number(data.lastMaterialTemperature || 0).toFixed(1);
+                document.getElementById("ringDoorOpenSourceTimestamp").textContent = formatSourceTimestamp(data.doorOpenSourceTimestamp);
+                document.getElementById("ringDoorClosedSourceTimestamp").textContent = formatSourceTimestamp(data.doorClosedSourceTimestamp);
+            } catch (e) {
+                setTiming(0, 0);
+            }
+
+        }
+        updateRingRollingEndpoint();
+        refreshRingRollingStatus();
+        setInterval(refreshRingRollingStatus, 5000);
+
+        // Keep the displayed PLC status current while the page is open.
+        setInterval(refreshOpcUaStatus, 5000);
+    </script>
+
+</body>
+</html>

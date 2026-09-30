@@ -1,0 +1,634 @@
+@model ProcessRecordViewModel
+@{
+    ViewData["Title"] = "Create Process Record";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Process Record</h1>
+        <p>Enter the record values and generate the original Excel template. Machine and report timestamps use IST (UTC+05:30).</p>
+    </div>
+</div>
+
+<form asp-action="Generate" method="post" class="record-form">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="All" class="validation"></div>
+
+    <section class="card">
+        <div class="section-title">
+            <h2>Furnace Status</h2>
+            <button type="button" class="secondary" onclick="refreshOpcUaStatus()">Refresh</button>
+        </div>
+        <div class="grid three">
+            <div class="field">
+                <label>Connection</label>
+                <div id="opcConnectionStatus">@Model.OpcUa.ConnectionStatus</div>
+            </div>
+            <div class="field">
+                <label>Door Status</label>
+                <div id="opcDoorStatus">@Model.OpcUa.Status</div>
+            </div>
+            <div class="field">
+                <label> Furnace</label>
+                <div id="opcCode">@Model.Furnace</div>
+            </div>
+            <div class="field">
+                <label>Door Open Signal</label>
+                <div id="opcDoorOpen">@Model.OpcUa.DoorOpen</div>
+            </div>
+            <div class="field">
+                <label>Door Close Signal</label>
+                <div id="opcDoorClosed">@Model.OpcUa.DoorClosed</div>
+            </div>
+            <div class="field">
+                <label>Door Open Source Timestamp</label>
+                <div id="opcDoorOpenSourceTimestamp">@(Model.OpcUa.DoorOpenSourceTimestamp?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field">
+                <label>Door Close Source Timestamp</label>
+                <div id="opcDoorClosedSourceTimestamp">@(Model.OpcUa.DoorClosedSourceTimestamp?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field">
+                <label>Last Read</label>
+                <div id="opcReadAt">@(Model.OpcUa.ReadAt?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div>
+            </div>
+            <div class="field wide">
+                <div id="opcError" class="validation" style="display:none"></div>
+            </div>
+        </div>
+      
+    </section>
+
+    <section class="card">
+        <div class="section-title">
+            <h2>Ring Rolling Status</h2>
+            <button type="button" class="secondary" onclick="refreshRingRollingStatus()">Refresh</button>
+        </div>
+        <div class="grid three">
+            <div class="field">
+                <label>Ring Rolling Stage Machine</label>
+                <select asp-for="Machine" id="ringRollingMachine">
+                    <option value="MRB_3000">MRB_3000</option>
+                    <option value="MRB_3001">MRB_3001</option>
+                </select>
+                <small class="hint" id="ringRollingEndpoint"></small>
+            </div>
+            <div class="field"><label>Connection</label><div id="ringConnectionStatus">@Model.RingRollingOpcUa.ConnectionStatus</div></div>
+            <div class="field"><label>Mode</label><div id="ringMode">Waiting</div></div>
+            <div class="field"><label>Auto start LED</label><div id="ringAutoStartLED">@Model.RingRollingOpcUa.AutoStartLED</div></div>
+            <div class="field"><label>Auto stop LED</label><div id="ringAutoStopLED">@Model.RingRollingOpcUa.AutoStopLED</div></div>
+            <div class="field"><label>Auto start PB</label><div id="ringAutoStartPB">@Model.RingRollingOpcUa.AutoStartPB</div></div>
+            <div class="field"><label>Auto stop PB</label><div id="ringAutoStopPB">@Model.RingRollingOpcUa.AutoStopPB</div></div>
+            <div class="field"><label>Material Force</label><div id="ringMaterialForce">@Model.RingRollingOpcUa.MaterialForce.ToString("0.0")</div></div>
+            <div class="field"><label>Material Temperature</label><div id="ringMaterialTemperature">@Model.RingRollingOpcUa.MaterialTemperature.ToString("0.0")</div></div>
+            <div class="field"><label>Last Read</label><div id="ringReadAt">@(Model.RingRollingOpcUa.ReadAt?.ToString("dd-MM-yyyy HH:mm:ss") ?? "-")</div></div>
+            <div class="field"><label>Furnace Door Open Used</label><div id="ringDoorOpenSourceTimestamp">-</div></div>
+            <div class="field"><label>Furnace Door Close Used</label><div id="ringDoorClosedSourceTimestamp">-</div></div>
+            <div class="field"><label>Furnace Data Captured</label><div id="furnaceCapturedAt">-</div></div>
+            <div class="field"><label>Machine Data Captured</label><div id="machineCapturedAt">-</div></div>
+            <div class="field"><label>Transfer Time</label><div id="ringTransferTime">00:00:00</div></div>
+            <div class="field"><label>Total Time</label><div id="ringTotalTime">00:00:00</div></div>
+            <div class="field"><label>Operation Time</label><div id="ringOperationTime">00:00:00</div></div>
+            <div class="field wide"><div id="ringError" class="validation" style="display:none"></div></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Basic Information</h2>
+        <div class="grid two">
+            <div class="field"><label asp-for="Date"></label><input asp-for="Date" type="date" /><span asp-validation-for="Date"></span></div>
+            <div class="field"><label asp-for="LoadingDate"></label><input asp-for="LoadingDate" type="date" /><span asp-validation-for="LoadingDate"></span></div>
+            <div class="field"><label asp-for="PartNo"></label><input asp-for="PartNo" placeholder="e.g. FD-3100" /><span asp-validation-for="PartNo"></span></div>
+            <div class="field"><label asp-for="Qty"></label><input asp-for="Qty" type="number" min="1" /><span asp-validation-for="Qty"></span></div>
+            <div class="field"><label asp-for="BatchNo"></label><input asp-for="BatchNo" placeholder="e.g. RR25JU73" /><span asp-validation-for="BatchNo"></span></div>
+            <div class="field"><label asp-for="LoadingTime"></label><input asp-for="LoadingTime" type="time" step="60" /><span asp-validation-for="LoadingTime"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Furnace / Soaking</h2>
+        <div class="grid three">
+            <div class="field">
+                <label asp-for="Furnace"></label>
+                <select asp-for="Furnace" id="furnaceSelect">
+                    @foreach (var furnaceName in new[] { "RRP_1", "RRP_2", "RRP_3", "RRP_4", "RRP_5", "RRP_10", "RRP_11", "RRP_12", "RRP_13", "RRP_14", "RRP_15", "RRP_16", "RRP_17", "RRP_18", "RRP_19" })
+                    {
+                        <option value="@furnaceName">@furnaceName</option>
+                    }
+
+                </select>
+                <span asp-validation-for="Furnace"></span>
+                <small class="hint" id="furnaceEndpoint"></small>
+            </div>
+            <div class="field"><label asp-for="ForgingTemperature"></label><input asp-for="ForgingTemperature" type="number" step="0.1" /><span asp-validation-for="ForgingTemperature"></span></div>
+            <div class="field"><label asp-for="TemperatureTolerance"></label><input asp-for="TemperatureTolerance" type="number" step="0.1" /><span asp-validation-for="TemperatureTolerance"></span></div>
+            <div class="field"><label asp-for="SoakingStartTemperature"></label><input asp-for="SoakingStartTemperature" type="number" step="0.1" /><span asp-validation-for="SoakingStartTemperature"></span></div>
+            <div class="field"><label asp-for="SoakingMin"></label><input asp-for="SoakingMin" type="time" step="60" /><span asp-validation-for="SoakingMin"></span></div>
+            <div class="field"><label asp-for="SoakingMax"></label><input asp-for="SoakingMax" type="time" step="60" /><span asp-validation-for="SoakingMax"></span></div>
+            <div class="field"><label asp-for="SoakingStartTime"></label><input asp-for="SoakingStartTime" type="time" step="60" /><span asp-validation-for="SoakingStartTime"></span></div>
+            <div class="field"><label asp-for="MinimumSoakingComplete"></label><input asp-for="MinimumSoakingComplete" type="time" step="60" /><span asp-validation-for="MinimumSoakingComplete"></span></div>
+            <div class="field"><label asp-for="OperationEndBefore"></label><input asp-for="OperationEndBefore" type="time" step="60" /><span asp-validation-for="OperationEndBefore"></span></div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Actual Operation</h2>
+        <div class="grid three">
+            <div class="field"><label asp-for="ActualOperationStartTime"></label><input asp-for="ActualOperationStartTime" type="time" step="60" /><span asp-validation-for="ActualOperationStartTime"></span></div>
+            <div class="field"><label asp-for="ActualOperationEndTime"></label><input asp-for="ActualOperationEndTime" type="time" step="60" /><span asp-validation-for="ActualOperationEndTime"></span></div>
+            <div class="field"><label asp-for="OperatorName"></label><input asp-for="OperatorName" /><span asp-validation-for="OperatorName"></span></div>
+            <div class="field wide">
+                <span>Equipment Details</span>
+                <label><input type="radio" name="equipmentMode" value="operation" checked /> Operation / Equipment</label>
+                <label><input type="radio" name="equipmentMode" value="ringRolling" /> Ring Rolling Stage / Mandrel</label>
+            </div>
+            <div class="field" data-operation-mode>
+                <label asp-for="Operation"></label>
+                <select asp-for="Operation">
+                    <option value="">Select operation</option>
+                    <option>Upset &amp; Pierce</option>
+                    <option>Axial Pressing</option>
+                    <option>Flattening</option>
+                </select>
+            </div>
+            <div class="field" data-operation-mode>
+                <label asp-for="Equipment"></label>
+                <select asp-for="Equipment">
+                    <option value="">Select equipment</option>
+                    <option>1500 Ton Press</option>
+                    <option>3000 Ton Press</option>
+                    <option>4000 Ton Press</option>
+                </select>
+            </div>
+            <div class="field" data-ring-rolling-mode>
+                <label asp-for="RingRollingStageNo"></label>
+                <input asp-for="RingRollingStageNo" placeholder="e.g. 1" />
+                <span asp-validation-for="RingRollingStageNo"></span>
+            </div>
+            <div class="field" data-ring-rolling-mode>
+                <label asp-for="MandrelDiameter"></label>
+                <input asp-for="MandrelDiameter" type="number" step="0.1" />
+                <span asp-validation-for="MandrelDiameter"></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="section-title"><h2>Operation Times</h2><div><button type="button" class="secondary" onclick="startDemoOperationTimer()">Show Demo Operation Time (12:43 PM)</button> <button type="button" class="secondary" onclick="addOperationRow()">+ Add Row</button></div></div>
+        <p class="hint">Operation Time is calculated automatically as Total Time − Transfer Time, matching the sample values in the supplied template.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>SL</th><th>Transfer Min</th><th>Transfer Sec</th><th>Total Min</th><th>Total Sec</th><th>Operation Min</th><th>Operation Sec</th><th>Observation / Remarks</th><th>Furnace Door Open</th><th>Furnace Door Close</th><th>Auto Start</th><th>Stop</th><th>Temperature (°C)</th></tr></thead>
+                <tbody id="operationRows">
+                 @for (var i = 0; i < Math.Min(Model.Operations.Count, 20); i++)
+                {
+                    <tr>
+                        <td>@(i + 1)<input type="hidden" asp-for="Operations[i].SlNo" /></td>
+                        <td><input asp-for="Operations[i].TransferMinutes" type="number" min="0" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].TransferSeconds" type="number" min="0" max="59" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].TotalMinutes" type="number" min="0" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].TotalSeconds" type="number" min="0" max="59" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].OperationMinutes" type="number" min="0" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].OperationSeconds" type="number" min="0" max="59" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].Observation" maxlength="500" /></td>
+                        <td><input asp-for="Operations[i].FurnaceDoorOpenTime" type="datetime-local" step="1" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].FurnaceDoorCloseTime" type="datetime-local" step="1" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].AutoStartTime" type="datetime-local" step="1" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].StopTime" type="datetime-local" step="1" readonly data-automatic-timing="true" /></td>
+                        <td><input asp-for="Operations[i].Temperature" type="number" step="0.01" readonly data-automatic-timing="true" /></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Remarks / Verification</h2>
+        <div class="grid three">
+            <div class="field wide"><label asp-for="OtherRemarks"></label><textarea asp-for="OtherRemarks" rows="3"></textarea></div>
+            <div class="field"><label asp-for="PreparedBy"></label><input asp-for="PreparedBy" /></div>
+            <div class="field"><label asp-for="VerifiedBy"></label><input asp-for="VerifiedBy" /></div>
+        </div>
+    </section>
+
+<div class="actions">
+    <button type="submit" class="primary">
+        Generate Excel
+    </button>
+
+    <a class="secondary button" asp-action="Create">
+        Clear Form
+    </a>
+</div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const furnaceEndpoints = {
+            RRP_1: "opc.tcp://172.133.63.150:4840",
+            RRP_2: "opc.tcp://172.133.63.151:4840",
+            RRP_3: "opc.tcp://172.133.63.152:4840",
+            RRP_4: "opc.tcp://172.133.63.153:4840",
+            RRP_5: "opc.tcp://172.133.63.154:4840",
+            RRP_10: "opc.tcp://172.133.63.156:4840",
+            RRP_11: "opc.tcp://172.133.63.157:4840",
+            RRP_12: "opc.tcp://172.133.63.158:4840",
+            RRP_13: "opc.tcp://172.133.63.159:4840",
+            RRP_14: "opc.tcp://172.133.63.160:4840",
+            RRP_15: "opc.tcp://172.133.63.161:4840",
+            RRP_16: "opc.tcp://172.133.63.162:4840",
+            RRP_17: "opc.tcp://172.133.63.163:4840",
+            RRP_18: "opc.tcp://172.133.63.164:4840",
+            RRP_19: "opc.tcp://172.133.63.165:4840"
+        };
+
+        function parseIndiaTimestamp(value) {
+            if (!value) return null;
+            const timestampText = typeof value === "string" && !/(Z|[+-]\d{2}:\d{2})$/i.test(value)
+                ? `${value}+05:30`
+                : value;
+            const timestamp = new Date(timestampText);
+            return Number.isNaN(timestamp.getTime()) ? null : timestamp;
+        }
+
+        function getIndiaDateTimeParts(timestamp) {
+            return new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Asia/Kolkata",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hourCycle: "h23"
+            }).formatToParts(timestamp).reduce((parts, item) => {
+                if (item.type !== "literal") parts[item.type] = item.value;
+                return parts;
+            }, {});
+        }
+
+        function formatDateTime(value) {
+            const timestamp = parseIndiaTimestamp(value);
+            if (!timestamp) return "-";
+            return new Intl.DateTimeFormat("en-GB", {
+                timeZone: "Asia/Kolkata",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hourCycle: "h23"
+            }).format(timestamp);
+        }
+
+        function updateFurnaceEndpoint() {
+            const furnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("furnaceEndpoint").textContent = furnaceEndpoints[furnace] || "";
+        }
+
+        document.getElementById("furnaceSelect").addEventListener("change", () => {
+            updateFurnaceEndpoint();
+            refreshOpcUaStatus();
+            refreshTimingStatus();
+            refreshTimingHistory();
+        });
+        updateFurnaceEndpoint();
+
+        async function refreshOpcUaStatus() {
+            const error = document.getElementById("opcError");
+            const selectedFurnace = document.getElementById("furnaceSelect").value;
+            document.getElementById("opcCode").textContent = selectedFurnace;
+
+            try {
+                const response = await fetch('@Url.Action("OpcUaStatus", "ProcessRecord")?furnace=' + encodeURIComponent(selectedFurnace), {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Unable to read OPC UA status.");
+                }
+
+                const data = await response.json();
+
+                document.getElementById("opcCode").textContent = selectedFurnace;
+                document.getElementById("opcConnectionStatus").textContent = data.connectionStatus ?? "-";
+                if (data.connectionStatus === "Connected") {
+                    document.getElementById("opcDoorStatus").textContent = data.status ?? "-";
+                    document.getElementById("opcCode").textContent = data.code ?? "-";
+                    document.getElementById("opcDoorOpen").textContent = data.doorOpen ? "True" : "False";
+                    document.getElementById("opcDoorClosed").textContent = data.doorClosed ? "True" : "False";
+                    document.getElementById("opcDoorOpenSourceTimestamp").textContent = formatTimestamp(data.doorOpenSourceTimestamp);
+                    furnaceDoorOpenedAt = parseIndiaTimestamp(data.doorOpenSourceTimestamp);
+                    document.getElementById("opcDoorClosedSourceTimestamp").textContent = formatTimestamp(data.doorClosedSourceTimestamp);
+                    document.getElementById("opcReadAt").textContent = formatTimestamp(data.readAt);
+                }
+
+                if (data.errorMessage) {
+                    error.textContent = data.errorMessage;
+                    error.style.display = "block";
+                } else {
+                    error.textContent = "";
+                    error.style.display = "none";
+                }
+            } catch (e) {
+                error.textContent = e.message || "Unable to read OPC UA status.";
+                error.style.display = "block";
+            }
+        }
+
+        const ringRollingEndpoints = {
+            MRB_3000: "opc.tcp://172.133.78.30:4840",
+            MRB_3001: "opc.tcp://172.133.78.31:4840"
+        };
+        let furnaceDoorOpenedAt = null;
+        let ringPrevious = null;
+        let ringStartAt = null;
+        let ringStoppedAt = null;
+        let ringMode = "Waiting";
+        let demoOperationStartedAt = null;
+
+        function formatDuration(milliseconds) {
+            const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+            return [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+                .map(value => String(value).padStart(2, "0")).join(":");
+        }
+
+        function formatTimestamp(value) {
+            const timestamp = parseIndiaTimestamp(value);
+            if (!timestamp) return "-";
+            const parts = getIndiaDateTimeParts(timestamp);
+            return `${parts.hour}:${parts.minute}:${parts.second}.${String(timestamp.getUTCMilliseconds()).padStart(3, "0")}`;
+        }
+
+        function formatSourceTimestamp(value) {
+            if (!value) return "-";
+            return formatTimestamp(value);
+        }
+
+        function updateRingTimers() {
+            refreshTimingStatus();
+        }
+
+        function getTodayAt1243IndiaTime() {
+            const today = getIndiaDateTimeParts(new Date());
+            return new Date(Date.UTC(Number(today.year), Number(today.month) - 1, Number(today.day), 12, 43) - (5.5 * 60 * 60 * 1000));
+        }
+
+        function startDemoOperationTimer() {
+            demoOperationStartedAt = getTodayAt1243IndiaTime();
+            updateDemoOperationTimer();
+            refreshTimingHistory();
+        }
+
+        function updateDemoOperationTimer() {
+            if (!demoOperationStartedAt) return;
+            document.getElementById("ringOperationTime").textContent = formatDuration(Date.now() - demoOperationStartedAt.getTime());
+        }
+
+        function updateRingRollingEndpoint() {
+            const machine = document.getElementById("ringRollingMachine").value;
+            document.getElementById("ringRollingEndpoint").textContent = ringRollingEndpoints[machine] || "";
+        }
+
+        async function refreshRingRollingStatus() {
+            const machine = document.getElementById("ringRollingMachine").value;
+            const error = document.getElementById("ringError");
+            try {
+                const response = await fetch('@Url.Action("RingRollingOpcUaStatus", "ProcessRecord")?machine=' + encodeURIComponent(machine), { cache: "no-store" });
+                if (!response.ok) throw new Error("Unable to read ring rolling OPC UA status.");
+                const data = await response.json();
+                const automaticStart = (data.autoStartLED || data.autoStartPB) && !(ringPrevious && (ringPrevious.autoStartLED || ringPrevious.autoStartPB));
+                const manualStart = Number(data.materialForce) >= 20 && (!ringPrevious || Number(ringPrevious.materialForce) < 20);
+                const stop = data.autoStopLED || data.autoStopPB;
+                if (automaticStart && !ringStartAt) { ringStartAt = new Date(); ringMode = "Automatic"; ringStoppedAt = null; }
+                if (manualStart && !ringStartAt) { ringStartAt = new Date(); ringMode = "Manual"; ringStoppedAt = null; }
+                if (stop && ringStartAt && !ringStoppedAt) ringStoppedAt = new Date();
+                ringPrevious = data;
+                document.getElementById("ringConnectionStatus").textContent = data.connectionStatus ?? "-";
+                document.getElementById("ringMode").textContent = ringMode;
+                if (data.connectionStatus === "Connected") {
+                    document.getElementById("ringAutoStartLED").textContent = data.autoStartLED ? "True" : "False";
+                    document.getElementById("ringAutoStopLED").textContent = data.autoStopLED ? "True" : "False";
+                    document.getElementById("ringAutoStartPB").textContent = data.autoStartPB ? "True" : "False";
+                    document.getElementById("ringAutoStopPB").textContent = data.autoStopPB ? "True" : "False";
+                    document.getElementById("ringMaterialForce").textContent = Number(data.materialForce || 0).toFixed(1);
+                    document.getElementById("ringMaterialTemperature").textContent = Number(data.materialTemperature || 0).toFixed(1);
+                    document.getElementById("ringReadAt").textContent = formatTimestamp(data.readAt);
+                }
+                error.textContent = data.errorMessage || "";
+                error.style.display = data.errorMessage ? "block" : "none";
+                refreshTimingStatus();
+            } catch (e) {
+                error.textContent = e.message || "Unable to read ring rolling OPC UA status.";
+                error.style.display = "block";
+            }
+        }
+
+        document.getElementById("ringRollingMachine").addEventListener("change", () => {
+            ringPrevious = null; ringStartAt = null; ringStoppedAt = null; ringMode = "Waiting";
+            updateRingRollingEndpoint();
+            refreshRingRollingStatus();
+            refreshTimingStatus();
+            refreshTimingHistory();
+            refreshSignalHistory();
+        });
+
+        function setOperationInput(index, name, value) {
+            const input = document.querySelector(`[name="Operations[${index}].${name}"]`);
+            if (input) input.value = value;
+        }
+
+        function formatDateTimeInput(value) {
+            const date = parseIndiaTimestamp(value);
+            if (!date) return "";
+            const parts = getIndiaDateTimeParts(date);
+            return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`;
+        }
+
+        function renderTimingHistory(rows) {
+            if (!isSelectedDateToday()) {
+                const latest = rows.length ? rows[rows.length - 1] : null;
+                setTiming(
+                    Number(latest?.totalMinutes || 0) * 60 + Number(latest?.totalSeconds || 0),
+                    Number(latest?.transferMinutes || 0) * 60 + Number(latest?.transferSeconds || 0));
+            }
+
+            for (let index = 0; index < 20; index++) {
+                setOperationInput(index, "SlNo", index + 1);
+                ["TransferMinutes", "TransferSeconds", "TotalMinutes", "TotalSeconds",
+                    "OperationMinutes", "OperationSeconds"].forEach(name => setOperationInput(index, name, 0));
+                ["Observation", "FurnaceDoorOpenTime", "FurnaceDoorCloseTime", "AutoStartTime",
+                    "StopTime", "Temperature", "HighestTemperature"].forEach(name => setOperationInput(index, name, ""));
+            }
+
+            rows.slice(0, 20).forEach((row, index) => {
+                setOperationInput(index, "SlNo", index + 1);
+                setOperationInput(index, "TransferMinutes", row.transferMinutes);
+                setOperationInput(index, "TransferSeconds", row.transferSeconds);
+                setOperationInput(index, "TotalMinutes", row.totalMinutes);
+                setOperationInput(index, "TotalSeconds", row.totalSeconds);
+                setOperationInput(index, "OperationMinutes", row.operationMinutes);
+                setOperationInput(index, "OperationSeconds", row.operationSeconds);
+                setOperationInput(index, "Observation", row.observation);
+                setOperationInput(index, "FurnaceDoorOpenTime", formatDateTimeInput(row.furnaceDoorOpenTime));
+                setOperationInput(index, "FurnaceDoorCloseTime", formatDateTimeInput(row.furnaceDoorCloseTime));
+                setOperationInput(index, "AutoStartTime", formatDateTimeInput(row.autoStartTime));
+                setOperationInput(index, "StopTime", formatDateTimeInput(row.stopTime));
+                setOperationInput(index, "Temperature", row.temperature ?? "");
+                setOperationInput(index, "HighestTemperature", row.highestTemperature ?? "");
+            });
+        }
+
+        async function refreshTimingHistory() {
+            const furnace = document.getElementById("furnaceSelect").value;
+            const machine = document.getElementById("ringRollingMachine").value;
+            const loadingDate = document.querySelector('[name="LoadingDate"]').value;
+
+            if (!furnace || !machine || !loadingDate) {
+                renderTimingHistory([]);
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    '@Url.Action("TimingHistory", "ProcessRecord")?furnace=' +
+                    encodeURIComponent(furnace) +
+                    '&machine=' +
+                    encodeURIComponent(machine) +
+                    '&loadingDate=' +
+                    encodeURIComponent(loadingDate) +
+                    '&loadingTime=' +
+                    encodeURIComponent(document.querySelector('[name="LoadingTime"]').value),
+                    { cache: "no-store" });
+
+                if (!response.ok)
+                    throw new Error("Unable to load timing history.");
+
+                renderTimingHistory(await response.json());
+            } catch (e) {
+                console.warn("Unable to load timing history", e);
+                renderTimingHistory([]);
+            }
+        }
+
+        async function refreshMachineOperationHistory() {
+            const machine = document.getElementById("ringRollingMachine").value;
+            const loadingDate = document.querySelector('[name="LoadingDate"]').value;
+
+            if (!machine || !loadingDate) {
+                renderTimingHistory([]);
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    '@Url.Action("MachineOperationHistory", "ProcessRecord")?machine=' +
+                    encodeURIComponent(machine) +
+                    '&loadingDate=' +
+                    encodeURIComponent(loadingDate) +
+                    '&loadingTime=' +
+                    encodeURIComponent(document.querySelector('[name="LoadingTime"]').value),
+                    { cache: "no-store" });
+
+                if (!response.ok)
+                    throw new Error("Unable to load machine operation history.");
+
+                renderTimingHistory(await response.json());
+            } catch (e) {
+                console.warn("Unable to load machine operation history", e);
+            }
+        }
+
+        document.querySelector('[name="LoadingDate"]').addEventListener("change", () => {
+            refreshTimingHistory();
+        });
+
+        document.querySelector('[name="LoadingTime"]').addEventListener("change", () => {
+            refreshTimingHistory();
+        });
+
+        function setTiming(totalSeconds, transferSeconds) {
+            const operationSeconds = Math.max(0, totalSeconds - transferSeconds);
+
+            document.getElementById("ringTransferTime").textContent = formatDuration(transferSeconds * 1000);
+            document.getElementById("ringTotalTime").textContent = formatDuration(totalSeconds * 1000);
+            if (!demoOperationStartedAt)
+                document.getElementById("ringOperationTime").textContent = formatDuration(operationSeconds * 1000);
+        }
+
+        function isSelectedDateToday() {
+            const selected = document.querySelector('[name="LoadingDate"]').value;
+            if (!selected) return true;
+
+            const today = getIndiaDateTimeParts(new Date());
+            const todayValue = `${today.year}-${today.month}-${today.day}`;
+
+            return selected === todayValue;
+        }
+
+        async function refreshTimingStatus() {
+            // Historical dates are driven entirely from persisted DB timing rows.
+            // Do not let the live 1-second refresh overwrite yesterday's values.
+            if (!isSelectedDateToday())
+                return;
+
+            const furnace = document.getElementById("furnaceSelect").value;
+            const machine = document.getElementById("ringRollingMachine").value;
+            try {
+                const response = await fetch('@Url.Action("TimingStatus", "ProcessRecord")?furnace=' + encodeURIComponent(furnace) + '&machine=' + encodeURIComponent(machine), { cache: "no-store" });
+                if (!response.ok) return;
+                const data = await response.json();
+                setTiming(Number(data.totalSeconds || 0), Number(data.transferSeconds || 0));
+                document.getElementById("ringMode").textContent = data.startMode || (data.isActive ? "Running" : "Waiting");
+                document.getElementById("ringAutoStartLED").textContent = data.lastAutoStartLED == null ? "-" : (data.lastAutoStartLED ? "True" : "False");
+                document.getElementById("ringAutoStopLED").textContent = data.lastAutoStopLED == null ? "-" : (data.lastAutoStopLED ? "True" : "False");
+                document.getElementById("ringAutoStartPB").textContent = data.lastAutoStartPB == null ? "-" : (data.lastAutoStartPB ? "True" : "False");
+                document.getElementById("ringAutoStopPB").textContent = data.lastAutoStopPB == null ? "-" : (data.lastAutoStopPB ? "True" : "False");
+                document.getElementById("ringMaterialForce").textContent = Number(data.lastMaterialForce || 0).toFixed(1);
+                document.getElementById("ringMaterialTemperature").textContent = Number(data.lastMaterialTemperature || 0).toFixed(1);
+                document.getElementById("ringDoorOpenSourceTimestamp").textContent = formatDateTime(data.doorOpenSourceTimestamp);
+                document.getElementById("ringDoorClosedSourceTimestamp").textContent = formatDateTime(data.doorClosedSourceTimestamp);
+                document.getElementById("furnaceCapturedAt").textContent = formatDateTime(data.furnaceCapturedAt);
+                document.getElementById("machineCapturedAt").textContent = formatDateTime(data.machineCapturedAt);
+            } catch (e) {
+                setTiming(0, 0);
+            }
+
+        }
+        function setEquipmentMode(mode, clearInactiveValues) {
+            const operationMode = mode === "operation";
+            document.querySelectorAll("[data-operation-mode] select, [data-operation-mode] input").forEach(input => {
+                input.disabled = !operationMode;
+                if (!operationMode && clearInactiveValues) input.value = "";
+            });
+            document.querySelectorAll("[data-ring-rolling-mode] input, [data-ring-rolling-mode] select").forEach(input => {
+                input.disabled = operationMode;
+                if (operationMode && clearInactiveValues) input.value = "";
+            });
+            document.querySelector(`input[name="equipmentMode"][value="${mode}"]`).checked = true;
+        }
+
+        document.querySelectorAll('input[name="equipmentMode"]').forEach(input => {
+            input.addEventListener("change", () => setEquipmentMode(input.value, true));
+        });
+
+        const initialRingRollingMode =
+            document.getElementById("RingRollingStageNo").value.trim() !== "" ||
+            document.getElementById("MandrelDiameter").value.trim() !== "";
+        setEquipmentMode(initialRingRollingMode ? "ringRolling" : "operation", false);
+
+        updateRingRollingEndpoint();
+        refreshRingRollingStatus();
+        setInterval(refreshRingRollingStatus, 5000);
+        refreshTimingStatus();
+        refreshTimingHistory();
+        setInterval(refreshTimingStatus, 1000);
+        setInterval(updateDemoOperationTimer, 1000);
+
+        // Keep the displayed PLC status current while the page is open.
+        setInterval(refreshOpcUaStatus, 5000);
+    </script>
+}

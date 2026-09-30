@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+  <PropertyGroup>
+	<TargetFramework>net8.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+	<ProjectReference Include="..\HALProcessRecord.csproj" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
+	<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+	<None Include="..\appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
