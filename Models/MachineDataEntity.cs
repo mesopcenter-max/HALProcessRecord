@@ -12,6 +12,7 @@ public class MachineDataEntity
     public bool AutoStopPushButton { get; set; }
     public decimal MaterialForce { get; set; }
     public decimal MaterialTemperature { get; set; }
+    public DateTime? MaterialForceSourceTimestamp { get; set; }
     public DateTime? AutoStartLedSourceTimestamp { get; set; }
     public DateTime? AutoStopLedSourceTimestamp { get; set; }
     public DateTime? AutoStartPushButtonSourceTimestamp { get; set; }

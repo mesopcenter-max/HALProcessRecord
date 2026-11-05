@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace HALProcessRecord.ViewModels;
 
@@ -68,6 +69,8 @@ public class ProcessRecordViewModel
 
     public string PreparedBy { get; set; } = string.Empty;
     public string VerifiedBy { get; set; } = string.Empty;
+    [BindNever]
+    public string? QrCode { get; set; }
 
     public OpcUaStatusViewModel OpcUa { get; set; } = new();
 

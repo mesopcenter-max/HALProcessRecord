@@ -10,6 +10,7 @@ public sealed class OpcMachineStatusViewModel
     public bool AutoStopPB { get; set; }
     public float MaterialForce { get; set; }
     public float MaterialTemperature { get; set; }
+    public DateTime? MaterialForceSourceTimestamp { get; set; }
     public DateTime? AutoStartLEDSourceTimestamp { get; set; }
     public DateTime? AutoStopLEDSourceTimestamp { get; set; }
     public DateTime? AutoStartPBSourceTimestamp { get; set; }

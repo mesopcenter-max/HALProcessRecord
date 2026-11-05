@@ -36,6 +36,19 @@
     </div>
 
 
+    @if (!string.IsNullOrWhiteSpace(Model.QrCode))
+    {
+        <section class="qr-code-section" aria-label="Process record QR code">
+            <div class="qr-code-container">
+                <img src="@Model.QrCode" alt="QR code for process record @Model.Id" />
+            </div>
+            <div class="qr-code-info">
+                <p>Scan to display this process record ID.</p>
+                <p class="qr-code-id">Record ID: @Model.Id</p>
+            </div>
+        </section>
+    }
+
     <!-- =========================================
          BASIC INFORMATION
     ========================================== -->

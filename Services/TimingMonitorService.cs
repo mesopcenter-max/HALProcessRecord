@@ -24,6 +24,8 @@ public sealed class TimingMonitorService : BackgroundService
     private readonly OpcUaService _opcUaService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<TimingMonitorService> _logger;
+    private readonly Dictionary<string, OpcUaStatusViewModel> _subscriptionFurnaceStatuses = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, OpcMachineStatusViewModel> _subscriptionMachineStatuses = new(StringComparer.OrdinalIgnoreCase);
 
     public TimingMonitorService(
         IServiceScopeFactory scopeFactory,
@@ -179,49 +181,78 @@ public sealed class TimingMonitorService : BackgroundService
             }
         }
 
-        foreach (var furnace in furnaces)
-        {
-            foreach (var machine in machines)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    return;
-                if (!furnaceStatuses.TryGetValue(furnace, out var furnaceStatus) ||
-                    !machineStatuses.TryGetValue(machine, out var machineStatus))
-                    continue;
-
-                try
-                {
-                    await ProcessPairAsync(furnace, machine, furnaceStatus, machineStatus, cancellationToken);
-                }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                {
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Unable to monitor timing for {Furnace}/{Machine}.", furnace, machine);
-                }
-            }
-        }
-
-        await PersistMachineSamplesAsync(machineStatuses, cancellationToken);
+        await PersistSignalSamplesAsync(furnaceStatuses, machineStatuses, cancellationToken);
     }
 
-    private async Task PersistMachineSamplesAsync(
-        IReadOnlyDictionary<string, OpcMachineStatusViewModel> statuses,
+    public async Task ProcessFurnaceSignalAsync(
+        string furnace,
+        OpcUaStatusViewModel status,
         CancellationToken cancellationToken)
     {
-        var connected = statuses.Where(x => x.Value.ConnectionStatus == "Connected").ToList();
-        if (connected.Count == 0)
+        _subscriptionFurnaceStatuses[furnace] = status;
+        foreach (var machine in _subscriptionMachineStatuses)
+            await ProcessPairWithRetryAsync(furnace, machine.Key, status, machine.Value, true, cancellationToken);
+    }
+
+    public async Task ProcessMachineSignalAsync(
+        string machine,
+        OpcMachineStatusViewModel status,
+        bool affectsTiming,
+        CancellationToken cancellationToken)
+    {
+        _subscriptionMachineStatuses[machine] = status;
+        if (!affectsTiming)
+            return;
+
+        foreach (var furnace in _subscriptionFurnaceStatuses)
+            await ProcessPairWithRetryAsync(furnace.Key, machine, furnace.Value, status, false, cancellationToken);
+    }
+
+    private async Task ProcessPairWithRetryAsync(
+        string furnace,
+        string machine,
+        OpcUaStatusViewModel furnaceStatus,
+        OpcMachineStatusViewModel machineStatus,
+        bool persistFurnaceSample,
+        CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            try
+            {
+                await ProcessPairAsync(furnace, machine, furnaceStatus, machineStatus, persistFurnaceSample, cancellationToken);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to process OPC UA timing signal for {Furnace}/{Machine}; retrying without advancing the signal stream.", furnace, machine);
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+        }
+    }
+
+    private async Task PersistSignalSamplesAsync(
+        IReadOnlyDictionary<string, OpcUaStatusViewModel> furnaceStatuses,
+        IReadOnlyDictionary<string, OpcMachineStatusViewModel> machineStatuses,
+        CancellationToken cancellationToken)
+    {
+        var connectedFurnaces = furnaceStatuses.Where(x => x.Value.ConnectionStatus == "Connected").ToList();
+        var connectedMachines = machineStatuses.Where(x => x.Value.ConnectionStatus == "Connected").ToList();
+        if (connectedFurnaces.Count == 0 && connectedMachines.Count == 0)
             return;
 
         try
         {
             await using var scope = _scopeFactory.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var capturedAt = IndiaTime.Now;
-            foreach (var (machine, status) in connected)
-                AddMachineSample(db, machine, status, capturedAt);
+            foreach (var (furnace, status) in connectedFurnaces)
+                AddFurnaceSample(db, furnace, status, false, status.ReadAt ?? IndiaTime.Now);
+            foreach (var (machine, status) in connectedMachines)
+                AddMachineSample(db, machine, status, status.ReadAt ?? IndiaTime.Now);
             await db.SaveChangesAsync(cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -239,6 +270,7 @@ public sealed class TimingMonitorService : BackgroundService
         string machine,
         OpcUaStatusViewModel furnaceStatus,
         OpcMachineStatusViewModel machineStatus,
+        bool persistFurnaceSample,
         CancellationToken cancellationToken)
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
@@ -291,7 +323,7 @@ public sealed class TimingMonitorService : BackgroundService
             }
 
             SetSignals(state, furnaceStatus, machineStatus);
-            if (furnaceConnected)
+            if (furnaceConnected && persistFurnaceSample)
                 AddFurnaceSample(db, furnace, furnaceStatus, state.HalfDoor, now);
             if (state.TotalStartAt is not null)
                 await AssociateMachineStartAsync(db, furnace, machine, state.TotalStartAt.Value, cancellationToken);
@@ -431,7 +463,10 @@ public sealed class TimingMonitorService : BackgroundService
         }
         if (manualStarted && state.TotalStartAt is null)
         {
-            state.TotalStartAt = now;
+            var machineStartAt = NormalizeEventTimestamp(machineStatus.MaterialForceSourceTimestamp, now);
+            if (state.TransferEndAt is DateTime doorClosedAt && machineStartAt < doorClosedAt)
+                machineStartAt = now;
+            state.TotalStartAt = machineStartAt;
             state.StartMode = "Manual";
             await AssociateMachineStartAsync(db, furnace, machine, state.TotalStartAt.Value, cancellationToken);
         }
@@ -449,7 +484,7 @@ public sealed class TimingMonitorService : BackgroundService
             state.StartMode = "Automatic";
             await AssociateMachineStartAsync(db, furnace, machine, state.TotalStartAt.Value, cancellationToken);
         }
-        if (furnaceConnected)
+        if (furnaceConnected && persistFurnaceSample)
             AddFurnaceSample(db, furnace, furnaceStatus, state.HalfDoor, now);
         if (stopped && state.TotalStartAt is not null)
         {
@@ -587,7 +622,7 @@ public sealed class TimingMonitorService : BackgroundService
 
     private static void AddMachineSample(AppDbContext db, string machine, OpcMachineStatusViewModel status, DateTime capturedAt)
     {
-        db.MachineData.Add(new MachineDataEntity { Machine = machine, AutoStartLed = status.AutoStartLED, AutoStopLed = status.AutoStopLED, AutoStartPushButton = status.AutoStartPB, AutoStopPushButton = status.AutoStopPB, MaterialForce = (decimal)status.MaterialForce, MaterialTemperature = (decimal)status.MaterialTemperature, AutoStartLedSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStartLEDSourceTimestamp, capturedAt), AutoStopLedSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStopLEDSourceTimestamp, capturedAt), AutoStartPushButtonSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStartPBSourceTimestamp, capturedAt), AutoStopPushButtonSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStopPBSourceTimestamp, capturedAt), SourceReadAt = status.ReadAt ?? capturedAt, CapturedAt = capturedAt });
+        db.MachineData.Add(new MachineDataEntity { Machine = machine, AutoStartLed = status.AutoStartLED, AutoStopLed = status.AutoStopLED, AutoStartPushButton = status.AutoStartPB, AutoStopPushButton = status.AutoStopPB, MaterialForce = (decimal)status.MaterialForce, MaterialTemperature = (decimal)status.MaterialTemperature, MaterialForceSourceTimestamp = NormalizeStoredSourceTimestamp(status.MaterialForceSourceTimestamp, capturedAt), AutoStartLedSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStartLEDSourceTimestamp, capturedAt), AutoStopLedSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStopLEDSourceTimestamp, capturedAt), AutoStartPushButtonSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStartPBSourceTimestamp, capturedAt), AutoStopPushButtonSourceTimestamp = NormalizeStoredSourceTimestamp(status.AutoStopPBSourceTimestamp, capturedAt), SourceReadAt = status.ReadAt ?? capturedAt, CapturedAt = capturedAt });
     }
 
     private static void SetSignals(MachineTimingStateEntity state, OpcUaStatusViewModel furnaceStatus, OpcMachineStatusViewModel machineStatus)

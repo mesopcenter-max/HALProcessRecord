@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using HALProcessRecord.Data;
 using HALProcessRecord.Models;
 using HALProcessRecord.Utilities;
+using HALProcessRecord.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using Opc.Ua;
 using Opc.Ua.Client;
@@ -15,8 +16,11 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
 {
     private readonly IConfiguration _configuration;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly TimingMonitorService _timingMonitorService;
     private readonly ILogger<OpcUaSubscriptionService> _logger;
     private readonly ConcurrentDictionary<string, EndpointSubscription> _subscriptions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _snapshotLock = new();
+    private readonly Dictionary<string, Snapshot> _snapshots = new(StringComparer.OrdinalIgnoreCase);
     private readonly Channel<SignalNotification> _notifications = Channel.CreateUnbounded<SignalNotification>(new UnboundedChannelOptions
     {
         SingleReader = true,
@@ -24,14 +28,17 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
     });
     private CancellationTokenSource? _stopping;
     private Task? _writerTask;
+    private Task? _snapshotTask;
 
     public OpcUaSubscriptionService(
         IConfiguration configuration,
         IServiceScopeFactory scopeFactory,
+        TimingMonitorService timingMonitorService,
         ILogger<OpcUaSubscriptionService> logger)
     {
         _configuration = configuration;
         _scopeFactory = scopeFactory;
+        _timingMonitorService = timingMonitorService;
         _logger = logger;
     }
 
@@ -42,6 +49,7 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
 
         _stopping = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         _writerTask = PersistNotificationsAsync(_stopping.Token);
+        _snapshotTask = PersistPeriodicSnapshotsAsync(_stopping.Token);
 
         foreach (var endpoint in GetEndpoints())
             _ = ConnectAndSubscribeAsync(endpoint, _stopping.Token);
@@ -213,8 +221,17 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
             return;
 
         var value = notification.Value;
-        if (value.StatusCode != UaStatusCodes.Good)
+        if (ServiceResult.IsBad(value.StatusCode))
+        {
+            _logger.LogWarning(
+                "Ignoring OPC UA notification with bad status {Status} for {Endpoint}/{Signal}.",
+                value.StatusCode,
+                endpoint.Name,
+                signal.Name);
             return;
+        }
+        if (value.StatusCode != UaStatusCodes.Good)
+            _logger.LogWarning("OPC UA notification status {Status} for {Endpoint}/{Signal}; processing the value and checking server diagnostics for possible queue overflow.", value.StatusCode, endpoint.Name, signal.Name);
 
         var receivedAt = IndiaTime.Now;
         var sourceTimestamp = IndiaTime.NormalizeOpcSourceTimestamp(value.SourceTimestamp, receivedAt);
@@ -233,68 +250,123 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
 
     private async Task PersistNotificationsAsync(CancellationToken cancellationToken)
     {
-        var snapshots = new Dictionary<string, Snapshot>(StringComparer.OrdinalIgnoreCase);
         await foreach (var notification in _notifications.Reader.ReadAllAsync(cancellationToken))
         {
-            try
+            Snapshot snapshot;
+            lock (_snapshotLock)
             {
-                var snapshot = snapshots.TryGetValue(notification.Endpoint, out var existing)
-                    ? existing
-                    : new Snapshot();
-                snapshot.Apply(notification);
-                snapshots[notification.Endpoint] = snapshot;
+                if (!_snapshots.TryGetValue(notification.Endpoint, out var current))
+                    current = new Snapshot(notification.Kind);
+                current.Apply(notification);
+                _snapshots[notification.Endpoint] = current;
+                snapshot = current.Copy();
+            }
 
-                await using var scope = _scopeFactory.CreateAsyncScope();
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                if (notification.Kind == EndpointKind.Furnace)
+            if (!snapshot.IsReadyForTiming(notification.Kind))
+                continue;
+
+            if (notification.Kind == EndpointKind.Furnace)
+            {
+                await _timingMonitorService.ProcessFurnaceSignalAsync(
+                    notification.Endpoint,
+                    snapshot.CreateFurnaceStatus(notification.ReceivedAt),
+                    cancellationToken);
+            }
+            else
+            {
+                await _timingMonitorService.ProcessMachineSignalAsync(
+                    notification.Endpoint,
+                    snapshot.CreateMachineStatus(notification.ReceivedAt),
+                    notification.Signal != "MaterialTemperature",
+                    cancellationToken);
+            }
+        }
+    }
+
+    private async Task PersistPeriodicSnapshotsAsync(CancellationToken cancellationToken)
+    {
+        var intervalMilliseconds = Math.Max(1, _configuration.GetValue("OpcUa:DataSnapshotIntervalMs", 3));
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(intervalMilliseconds));
+
+        while (await timer.WaitForNextTickAsync(cancellationToken))
+        {
+            Dictionary<string, Snapshot> readySnapshots;
+            lock (_snapshotLock)
+            {
+                readySnapshots = _snapshots
+                    .Where(x => x.Value.IsCompleteForPersistence(x.Value.Kind))
+                    .ToDictionary(x => x.Key, x => x.Value.Copy(), StringComparer.OrdinalIgnoreCase);
+            }
+
+            if (readySnapshots.Count == 0)
+                continue;
+
+            var capturedAt = IndiaTime.Now;
+            var furnaceRows = new List<FurnaceDataEntity>();
+            var machineRows = new List<MachineDataEntity>();
+            foreach (var (endpoint, snapshot) in readySnapshots)
+            {
+                if (snapshot.Kind == EndpointKind.Furnace)
                 {
-                    db.FurnaceData.Add(new FurnaceDataEntity
+                    furnaceRows.Add(new FurnaceDataEntity
                     {
-                        Furnace = notification.Endpoint,
+                        Furnace = endpoint,
                         DoorClosed = snapshot.DoorClosed,
                         DoorOpen = snapshot.DoorOpen,
                         HalfDoor = false,
                         Code = string.Empty,
                         DoorOpenSourceTimestamp = snapshot.DoorOpenTimestamp,
                         DoorClosedSourceTimestamp = snapshot.DoorClosedTimestamp,
-                        SourceReadAt = notification.ReceivedAt,
-                        CapturedAt = IndiaTime.Now
+                        SourceReadAt = capturedAt,
+                        CapturedAt = capturedAt
                     });
                 }
                 else
                 {
-                    db.MachineData.Add(new MachineDataEntity
+                    machineRows.Add(new MachineDataEntity
                     {
-                        Machine = notification.Endpoint,
+                        Machine = endpoint,
                         AutoStartLed = snapshot.AutoStartLed,
                         AutoStopLed = snapshot.AutoStopLed,
                         AutoStartPushButton = snapshot.AutoStartPushButton,
                         AutoStopPushButton = snapshot.AutoStopPushButton,
                         MaterialForce = snapshot.MaterialForce,
                         MaterialTemperature = snapshot.MaterialTemperature,
+                        MaterialForceSourceTimestamp = snapshot.MaterialForceTimestamp,
                         AutoStartLedSourceTimestamp = snapshot.AutoStartLedTimestamp,
                         AutoStopLedSourceTimestamp = snapshot.AutoStopLedTimestamp,
                         AutoStartPushButtonSourceTimestamp = snapshot.AutoStartPushButtonTimestamp,
                         AutoStopPushButtonSourceTimestamp = snapshot.AutoStopPushButtonTimestamp,
-                        SourceReadAt = notification.ReceivedAt,
-                        CapturedAt = IndiaTime.Now
+                        SourceReadAt = capturedAt,
+                        CapturedAt = capturedAt
                     });
                 }
+            }
 
-                await db.SaveChangesAsync(cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            while (true)
             {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Unable to persist OPC UA notification for {Endpoint}/{Signal}; continuing with subsequent notifications.",
-                    notification.Endpoint,
-                    notification.Signal);
-                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                try
+                {
+                    await using var scope = _scopeFactory.CreateAsyncScope();
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.FurnaceData.AddRange(furnaceRows);
+                    db.MachineData.AddRange(machineRows);
+                    await db.SaveChangesAsync(cancellationToken);
+                    break;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Unable to persist periodic OPC UA snapshots for {FurnaceCount} furnaces and {MachineCount} machines; retrying.",
+                        furnaceRows.Count,
+                        machineRows.Count);
+                    await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                }
             }
         }
     }
@@ -308,7 +380,9 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
             yield return new EndpointDefinition(item.Key, item.Value, EndpointKind.Furnace, new List<SignalDefinition>
             {
                 new("DoorOpen", GetSetting("DoorOpenNodeId", "ns=4;i=6")),
-                new("DoorClosed", GetSetting("DoorCloseNodeId", "ns=4;i=5"))
+                new("DoorClosed", string.Equals(item.Key, "RRP_12", StringComparison.OrdinalIgnoreCase)
+                    ? "ns=4;i=2"
+                    : GetSetting("DoorCloseNodeId", "ns=4;i=5"))
             });
         }
 
@@ -370,6 +444,10 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
         {
             try { await _writerTask; } catch (OperationCanceledException) { }
         }
+        if (_snapshotTask is not null)
+        {
+            try { await _snapshotTask; } catch (OperationCanceledException) { }
+        }
         foreach (var subscription in _subscriptions.Values)
         {
             try
@@ -391,6 +469,9 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
 
     private sealed class Snapshot
     {
+        private readonly HashSet<string> _receivedSignals = new(StringComparer.OrdinalIgnoreCase);
+        public EndpointKind Kind { get; }
+        public DateTime LastReceivedAt { get; private set; }
         public bool DoorOpen;
         public DateTime? DoorOpenTimestamp;
         public bool DoorClosed;
@@ -405,9 +486,42 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
         public DateTime? AutoStopLedTimestamp;
         public DateTime? AutoStartPushButtonTimestamp;
         public DateTime? AutoStopPushButtonTimestamp;
+        public DateTime? MaterialForceTimestamp;
+
+        public Snapshot(EndpointKind kind)
+        {
+            Kind = kind;
+        }
+
+        public Snapshot Copy()
+        {
+            var copy = new Snapshot(Kind)
+            {
+                LastReceivedAt = LastReceivedAt,
+                DoorOpen = DoorOpen,
+                DoorOpenTimestamp = DoorOpenTimestamp,
+                DoorClosed = DoorClosed,
+                DoorClosedTimestamp = DoorClosedTimestamp,
+                AutoStartLed = AutoStartLed,
+                AutoStopLed = AutoStopLed,
+                AutoStartPushButton = AutoStartPushButton,
+                AutoStopPushButton = AutoStopPushButton,
+                MaterialForce = MaterialForce,
+                MaterialTemperature = MaterialTemperature,
+                AutoStartLedTimestamp = AutoStartLedTimestamp,
+                AutoStopLedTimestamp = AutoStopLedTimestamp,
+                AutoStartPushButtonTimestamp = AutoStartPushButtonTimestamp,
+                AutoStopPushButtonTimestamp = AutoStopPushButtonTimestamp,
+                MaterialForceTimestamp = MaterialForceTimestamp
+            };
+            copy._receivedSignals.UnionWith(_receivedSignals);
+            return copy;
+        }
 
         public void Apply(SignalNotification notification)
         {
+            LastReceivedAt = notification.ReceivedAt;
+            _receivedSignals.Add(notification.Signal);
             switch (notification.Signal)
             {
                 case "DoorOpen": DoorOpen = ToBoolean(notification.Value); DoorOpenTimestamp = notification.SourceTimestamp; break;
@@ -416,10 +530,48 @@ public sealed class OpcUaSubscriptionService : BackgroundService, IAsyncDisposab
                 case "AutoStopLed": AutoStopLed = ToBoolean(notification.Value); AutoStopLedTimestamp = notification.SourceTimestamp; break;
                 case "AutoStartPushButton": AutoStartPushButton = ToBoolean(notification.Value); AutoStartPushButtonTimestamp = notification.SourceTimestamp; break;
                 case "AutoStopPushButton": AutoStopPushButton = ToBoolean(notification.Value); AutoStopPushButtonTimestamp = notification.SourceTimestamp; break;
-                case "MaterialForce": MaterialForce = ToDecimal(notification.Value); break;
+                case "MaterialForce": MaterialForce = ToDecimal(notification.Value); MaterialForceTimestamp = notification.SourceTimestamp; break;
                 case "MaterialTemperature": MaterialTemperature = ToDecimal(notification.Value); break;
             }
         }
+
+        public bool IsReadyForTiming(EndpointKind kind) => kind == EndpointKind.Furnace
+            ? _receivedSignals.Contains("DoorOpen") && _receivedSignals.Contains("DoorClosed")
+            : _receivedSignals.Contains("AutoStartLed") &&
+              _receivedSignals.Contains("AutoStopLed") &&
+              _receivedSignals.Contains("AutoStartPushButton") &&
+              _receivedSignals.Contains("AutoStopPushButton") &&
+              _receivedSignals.Contains("MaterialForce");
+
+        public bool IsCompleteForPersistence(EndpointKind kind) => IsReadyForTiming(kind) &&
+            (kind == EndpointKind.Furnace || _receivedSignals.Contains("MaterialTemperature"));
+
+        public OpcUaStatusViewModel CreateFurnaceStatus(DateTime readAt) => new()
+        {
+            ConnectionStatus = "Connected",
+            DoorOpen = DoorOpen,
+            DoorClosed = DoorClosed,
+            DoorOpenSourceTimestamp = DoorOpenTimestamp,
+            DoorClosedSourceTimestamp = DoorClosedTimestamp,
+            ReadAt = readAt
+        };
+
+        public OpcMachineStatusViewModel CreateMachineStatus(DateTime readAt) => new()
+        {
+            ConnectionStatus = "Connected",
+            AutoStartLED = AutoStartLed,
+            AutoStopLED = AutoStopLed,
+            AutoStartPB = AutoStartPushButton,
+            AutoStopPB = AutoStopPushButton,
+            MaterialForce = (float)MaterialForce,
+            MaterialTemperature = (float)MaterialTemperature,
+            MaterialForceSourceTimestamp = MaterialForceTimestamp,
+            AutoStartLEDSourceTimestamp = AutoStartLedTimestamp,
+            AutoStopLEDSourceTimestamp = AutoStopLedTimestamp,
+            AutoStartPBSourceTimestamp = AutoStartPushButtonTimestamp,
+            AutoStopPBSourceTimestamp = AutoStopPushButtonTimestamp,
+            ReadAt = readAt
+        };
 
         private static bool ToBoolean(object? value) => value switch
         {

@@ -32,6 +32,7 @@ public class ProcessRecordEntity
     public string PreparedBy { get; set; } = string.Empty;
     public string VerifiedBy { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = IndiaTime.Now;
+    public string? QrCode { get; set; }
 
     public List<OperationRecordEntity> Operations { get; set; } = new();
 }

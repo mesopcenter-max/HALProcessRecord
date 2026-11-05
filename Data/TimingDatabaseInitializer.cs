@@ -7,6 +7,7 @@ public static class TimingDatabaseInitializer
     public static void Initialize(AppDbContext db)
     {
         db.Database.EnsureCreated();
+        db.Database.SetCommandTimeout(TimeSpan.FromMinutes(5));
         db.Database.ExecuteSqlRaw("""
             IF OBJECT_ID(N'[MachineTimingStates]', N'U') IS NULL
             BEGIN
@@ -39,6 +40,9 @@ public static class TimingDatabaseInitializer
             BEGIN
                 ALTER TABLE [ProcessRecords] ADD [Machine] nvarchar(50) NOT NULL CONSTRAINT [DF_ProcessRecords_Machine] DEFAULT N'MRB_3000';
             END;
+
+            IF COL_LENGTH(N'[ProcessRecords]', N'QrCode') IS NULL
+                ALTER TABLE [ProcessRecords] ADD [QrCode] nvarchar(max) NULL;
 
             IF COL_LENGTH(N'[MachineTimingStates]', N'TransferEndAt') IS NULL
             BEGIN
@@ -153,6 +157,7 @@ public static class TimingDatabaseInitializer
                     [AutoStopLedSourceTimestamp] datetime2 NULL,
                     [AutoStartPushButtonSourceTimestamp] datetime2 NULL,
                     [AutoStopPushButtonSourceTimestamp] datetime2 NULL,
+                    [MaterialForceSourceTimestamp] datetime2 NULL,
                     [SourceReadAt] datetime2 NOT NULL,
                     [CapturedAt] datetime2 NOT NULL,
                     CONSTRAINT [PK_MachineData] PRIMARY KEY ([Id])
@@ -161,37 +166,28 @@ public static class TimingDatabaseInitializer
                     ON [MachineData] ([Machine], [CapturedAt]);
             END;
 
-            UPDATE [FurnaceData]
-            SET [SourceReadAt] = [CapturedAt]
-            WHERE [SourceReadAt] < '2020-01-01';
+            IF COL_LENGTH(N'[MachineData]', N'MaterialForceSourceTimestamp') IS NULL
+                ALTER TABLE [MachineData] ADD [MaterialForceSourceTimestamp] datetime2 NULL;
 
             UPDATE [FurnaceData]
-            SET [DoorOpenSourceTimestamp] = [CapturedAt]
-            WHERE [DoorOpenSourceTimestamp] < '2020-01-01';
-
-            UPDATE [FurnaceData]
-            SET [DoorClosedSourceTimestamp] = [CapturedAt]
-            WHERE [DoorClosedSourceTimestamp] < '2020-01-01';
-
-            UPDATE [MachineData]
-            SET [SourceReadAt] = [CapturedAt]
-            WHERE [SourceReadAt] < '2020-01-01';
+            SET [SourceReadAt] = CASE WHEN [SourceReadAt] < '2020-01-01' THEN [CapturedAt] ELSE [SourceReadAt] END,
+                [DoorOpenSourceTimestamp] = CASE WHEN [DoorOpenSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [DoorOpenSourceTimestamp] END,
+                [DoorClosedSourceTimestamp] = CASE WHEN [DoorClosedSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [DoorClosedSourceTimestamp] END
+            WHERE [SourceReadAt] < '2020-01-01'
+               OR [DoorOpenSourceTimestamp] < '2020-01-01'
+               OR [DoorClosedSourceTimestamp] < '2020-01-01';
 
             UPDATE [MachineData]
-            SET [AutoStartLedSourceTimestamp] = [CapturedAt]
-            WHERE [AutoStartLedSourceTimestamp] < '2020-01-01';
-
-            UPDATE [MachineData]
-            SET [AutoStopLedSourceTimestamp] = [CapturedAt]
-            WHERE [AutoStopLedSourceTimestamp] < '2020-01-01';
-
-            UPDATE [MachineData]
-            SET [AutoStartPushButtonSourceTimestamp] = [CapturedAt]
-            WHERE [AutoStartPushButtonSourceTimestamp] < '2020-01-01';
-
-            UPDATE [MachineData]
-            SET [AutoStopPushButtonSourceTimestamp] = [CapturedAt]
-            WHERE [AutoStopPushButtonSourceTimestamp] < '2020-01-01';
+            SET [SourceReadAt] = CASE WHEN [SourceReadAt] < '2020-01-01' THEN [CapturedAt] ELSE [SourceReadAt] END,
+                [AutoStartLedSourceTimestamp] = CASE WHEN [AutoStartLedSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [AutoStartLedSourceTimestamp] END,
+                [AutoStopLedSourceTimestamp] = CASE WHEN [AutoStopLedSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [AutoStopLedSourceTimestamp] END,
+                [AutoStartPushButtonSourceTimestamp] = CASE WHEN [AutoStartPushButtonSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [AutoStartPushButtonSourceTimestamp] END,
+                [AutoStopPushButtonSourceTimestamp] = CASE WHEN [AutoStopPushButtonSourceTimestamp] < '2020-01-01' THEN [CapturedAt] ELSE [AutoStopPushButtonSourceTimestamp] END
+            WHERE [SourceReadAt] < '2020-01-01'
+               OR [AutoStartLedSourceTimestamp] < '2020-01-01'
+               OR [AutoStopLedSourceTimestamp] < '2020-01-01'
+               OR [AutoStartPushButtonSourceTimestamp] < '2020-01-01'
+               OR [AutoStopPushButtonSourceTimestamp] < '2020-01-01';
 
             UPDATE [TimingCycles]
             SET [StoppedAt] = [CreatedAt],

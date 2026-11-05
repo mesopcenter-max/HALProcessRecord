@@ -4,6 +4,7 @@
 	<Nullable>enable</Nullable>
 	<ImplicitUsings>enable</ImplicitUsings>
 	<OutputType>Exe</OutputType>
+	<DefaultItemExcludes>$(DefaultItemExcludes);bin-validation\**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
 	<ProjectReference Include="..\HALProcessRecord.csproj" />

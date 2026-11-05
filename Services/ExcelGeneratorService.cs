@@ -34,6 +34,17 @@ public class ExcelGeneratorService : IExcelGeneratorService
         var remarksRow = 51 + extraRows;
         var signatureRow = 53 + extraRows;
 
+        if (!string.IsNullOrWhiteSpace(model.QrCode))
+        {
+            const string pngDataUriPrefix = "data:image/png;base64,";
+            var qrCodeBase64 = model.QrCode.StartsWith(pngDataUriPrefix, StringComparison.Ordinal)
+                ? model.QrCode[pngDataUriPrefix.Length..]
+                : throw new InvalidOperationException("The saved process record QR code is not a PNG data URI.");
+            using var qrCodeStream = new MemoryStream(Convert.FromBase64String(qrCodeBase64));
+            ws.Row(7).Height = 58;
+            ws.AddPicture(qrCodeStream).MoveTo(ws.Cell("O7")).WithSize(75, 75);
+        }
+
         // Header / basic information. These coordinates match the uploaded template.
         ws.Cell("D9").Value = model.Date;
         ws.Cell("D9").Style.DateFormat.Format = "dd-MM-yyyy";

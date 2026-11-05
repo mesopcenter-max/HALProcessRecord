@@ -112,5 +112,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<MachineDataEntity>()
             .Property(x => x.MaterialTemperature).HasPrecision(18, 2);
+
+        modelBuilder.Entity<ProcessRecordEntity>()
+            .Property(x => x.QrCode).HasColumnType("nvarchar(max)");
     }
 }

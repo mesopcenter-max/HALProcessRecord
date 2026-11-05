@@ -30,8 +30,7 @@
     </header>
     <main class="container">
         @RenderBody()
-    </main>
-    <script>
+        <script>
             function addOperationRow() {
                 const tbody = document.getElementById('operationRows');
                 const index = tbody.children.length;
@@ -59,6 +58,18 @@
                 tbody.appendChild(tr);
             }
     </script>
-    @await RenderSectionAsync("Scripts", required: false)
+        @await RenderSectionAsync("Scripts", required: false)
+    </main>
+    <footer class="hal-footer">
+        <div class="hal-footer-content">
+            <p class="hal-footer-text">
+                © @DateTime.Now.Year Hindustan Aeronautics Limited (HAL). All rights reserved.
+            </p>
+            <div class="hal-footer-links">
+                <span class="hal-footer-text">HAL Ring Rolling Process Record</span>
+                <span class="hal-footer-text">Version 1.0</span>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

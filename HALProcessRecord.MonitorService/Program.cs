@@ -15,8 +15,9 @@ builder.Services.AddWindowsService(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<OpcUaService>();
+builder.Services.AddSingleton<TimingMonitorService>();
 builder.Services.AddHostedService<OpcUaSubscriptionService>();
-builder.Services.AddHostedService<TimingMonitorService>();
+builder.Services.AddHostedService(provider => provider.GetRequiredService<TimingMonitorService>());
 
 var host = builder.Build();
 using (var scope = host.Services.CreateScope())

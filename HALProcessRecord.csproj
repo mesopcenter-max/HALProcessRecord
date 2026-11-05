@@ -3,10 +3,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <DefaultItemExcludes>$(DefaultItemExcludes);HALProcessRecord.MonitorService\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);HALProcessRecord.MonitorService\**;bin-validation\**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.19" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua" Version="1.5.378.156" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.19">

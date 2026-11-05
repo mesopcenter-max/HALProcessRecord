@@ -14,3 +14,6 @@
 
 ## Operation History Display
 - For operation history display, prioritize complete furnace-matched rows containing transfer, total, and operation times. Use machine-only operation rows only as a fallback when no furnace-matched rows are available.
+
+## UI Styling
+- When fixing styling, preserve and restore the user's existing CSS rather than inventing or redesigning the UI unless explicitly asked.

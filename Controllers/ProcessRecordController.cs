@@ -53,9 +53,15 @@ public class ProcessRecordController : Controller
             // start/stop cycle for the selected furnace + machine, not just one live read.
             await ApplyAutomaticTimingAsync(model, HttpContext.RequestAborted);
 
+            await using var transaction = await _db.Database.BeginTransactionAsync(HttpContext.RequestAborted);
             var entity = MapToEntity(model);
             _db.ProcessRecords.Add(entity);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(HttpContext.RequestAborted);
+
+            entity.QrCode = ProcessRecordQrCode.GenerateDataUri(entity.Id);
+            model.QrCode = entity.QrCode;
+            await _db.SaveChangesAsync(HttpContext.RequestAborted);
+            await transaction.CommitAsync(HttpContext.RequestAborted);
 
             var bytes = _excelGenerator.Generate(model);
             var fileName = $"GE_Process_Record_{model.BatchNo}_{IndiaTime.Now:yyyyMMdd_HHmmss}.xlsx";
@@ -99,31 +105,22 @@ public class ProcessRecordController : Controller
         if (string.IsNullOrWhiteSpace(furnace) || string.IsNullOrWhiteSpace(machine))
             return BadRequest();
 
+        var reportDate = loadingDate?.Date ?? IndiaTime.Now.Date;
         var rows = await GetTimingHistoryAsync(
             furnace,
             machine,
-            loadingDate?.Date ?? IndiaTime.Now.Date,
-            loadingTime,
-            cancellationToken);
-        var machineRows = await GetMachineOperationHistoryAsync(
-            machine,
-            loadingDate?.Date ?? IndiaTime.Now.Date,
+            reportDate,
             loadingTime,
             cancellationToken);
         if (rows.Count == 0)
         {
-            rows = machineRows;
+            rows = await GetMachineOperationHistoryAsync(
+                machine,
+                reportDate,
+                loadingTime,
+                cancellationToken);
         }
-        else
-        {
-            var mergedRows = rows.ToList();
-            mergedRows.AddRange(machineRows.Where(machineRow =>
-                !rows.Any(furnaceRow => IsMatchingOperationCycle(furnaceRow, machineRow))));
-            rows = mergedRows
-                .OrderBy(x => x.AutoStartTime ?? DateTime.MaxValue)
-                .Take(20)
-                .ToList();
-        }
+
         return Json(rows.Select((row, index) => new
         {
             slNo = index + 1,
@@ -326,14 +323,11 @@ public class ProcessRecordController : Controller
 
         var samples = await _db.MachineData
             .AsNoTracking()
-            .Where(x => x.Machine == machine)
+            .Where(x => x.Machine == machine &&
+                        x.CapturedAt >= fromIndiaTime.AddDays(-1) &&
+                        x.CapturedAt <= toIndiaTime)
             .OrderBy(x => x.CapturedAt)
             .ToListAsync(cancellationToken);
-
-        samples = samples
-            .Where(x => x.CapturedAt >= fromIndiaTime.AddDays(-1) &&
-                        x.CapturedAt <= toIndiaTime)
-            .ToList();
 
         var starts = new List<DateTime>();
         var stops = new List<DateTime>();
@@ -557,31 +551,31 @@ public class ProcessRecordController : Controller
                             x.Temperature is not null || x.HighestTemperature is not null ||
                             !string.IsNullOrWhiteSpace(x.Observation))
                 .Select((x, index) =>
-            {
-                var transfer = TimeSpan.FromMinutes(x.TransferMinutes) + TimeSpan.FromSeconds(x.TransferSeconds);
-                var total = TimeSpan.FromMinutes(x.TotalMinutes) + TimeSpan.FromSeconds(x.TotalSeconds);
-                var op = x.OperationMinutes > 0 || x.OperationSeconds > 0
-                    ? TimeSpan.FromMinutes(x.OperationMinutes) + TimeSpan.FromSeconds(x.OperationSeconds)
-                    : total >= transfer ? total - transfer : TimeSpan.Zero;
-
-                return new OperationRecordEntity
                 {
-                    SlNo = index + 1,
-                    TransferMinutes = x.TransferMinutes,
-                    TransferSeconds = x.TransferSeconds,
-                    TotalMinutes = x.TotalMinutes,
-                    TotalSeconds = x.TotalSeconds,
-                    OperationMinutes = (int)op.TotalMinutes,
-                    OperationSeconds = op.Seconds,
-                    Observation = x.Observation?.Trim() ?? string.Empty,
-                    FurnaceDoorOpenTime = x.FurnaceDoorOpenTime,
-                    FurnaceDoorCloseTime = x.FurnaceDoorCloseTime,
-                    AutoStartTime = x.AutoStartTime,
-                    StopTime = x.StopTime,
-                    Temperature = x.Temperature,
-                    HighestTemperature = x.HighestTemperature
-                };
-            }).ToList()
+                    var transfer = TimeSpan.FromMinutes(x.TransferMinutes) + TimeSpan.FromSeconds(x.TransferSeconds);
+                    var total = TimeSpan.FromMinutes(x.TotalMinutes) + TimeSpan.FromSeconds(x.TotalSeconds);
+                    var op = x.OperationMinutes > 0 || x.OperationSeconds > 0
+                        ? TimeSpan.FromMinutes(x.OperationMinutes) + TimeSpan.FromSeconds(x.OperationSeconds)
+                        : total >= transfer ? total - transfer : TimeSpan.Zero;
+
+                    return new OperationRecordEntity
+                    {
+                        SlNo = index + 1,
+                        TransferMinutes = x.TransferMinutes,
+                        TransferSeconds = x.TransferSeconds,
+                        TotalMinutes = x.TotalMinutes,
+                        TotalSeconds = x.TotalSeconds,
+                        OperationMinutes = (int)op.TotalMinutes,
+                        OperationSeconds = op.Seconds,
+                        Observation = x.Observation?.Trim() ?? string.Empty,
+                        FurnaceDoorOpenTime = x.FurnaceDoorOpenTime,
+                        FurnaceDoorCloseTime = x.FurnaceDoorCloseTime,
+                        AutoStartTime = x.AutoStartTime,
+                        StopTime = x.StopTime,
+                        Temperature = x.Temperature,
+                        HighestTemperature = x.HighestTemperature
+                    };
+                }).ToList()
         };
     }
 
@@ -615,6 +609,7 @@ public class ProcessRecordController : Controller
             OtherRemarks = entity.OtherRemarks,
             PreparedBy = entity.PreparedBy,
             VerifiedBy = entity.VerifiedBy,
+            QrCode = entity.QrCode,
             Operations = entity.Operations
                 .OrderBy(x => x.SlNo)
                 .Select(x => new OperationRowViewModel
@@ -724,6 +719,8 @@ public class ProcessRecordController : Controller
             var signalRows = await BuildSignalWorkOrderRowsAsync(
                 model.Furnace,
                 model.Machine,
+                startLocal.Date.AddDays(-1),
+                toIndiaTime,
                 cancellationToken);
             var selectedSignalRows = signalRows
                 .Where(x => x.StartAt >= fromIndiaTime)
@@ -872,7 +869,7 @@ public class ProcessRecordController : Controller
                     ? FurnaceDoorTiming.EventTime(sample.AutoStartLedSourceTimestamp, sample.CapturedAt)
                     : sample.AutoStartPushButton
                         ? FurnaceDoorTiming.EventTime(sample.AutoStartPushButtonSourceTimestamp, sample.CapturedAt)
-                        : sample.CapturedAt;
+                        : FurnaceDoorTiming.EventTime(sample.MaterialForceSourceTimestamp, sample.CapturedAt);
                 machineStart = startTimestamp;
             }
 
@@ -1041,7 +1038,8 @@ public class ProcessRecordController : Controller
         var autoStart = row.AutoStartTime ?? machine.SelectMany(x => new[]
         {
             x.AutoStartLedSourceTimestamp,
-            x.AutoStartPushButtonSourceTimestamp
+            x.AutoStartPushButtonSourceTimestamp,
+            x.MaterialForce >= 20m ? x.MaterialForceSourceTimestamp : null
         }).Where(IsValidSourceTimestamp).Select(x => (DateTime?)x!.Value).FirstOrDefault() ?? row.StartAt;
         var stop = row.StopTime ?? machine.SelectMany(x => new[]
         {
@@ -1074,22 +1072,22 @@ public class ProcessRecordController : Controller
     private async Task<List<TimingReportRow>> BuildSignalWorkOrderRowsAsync(
         string furnace,
         string machine,
+        DateTime historyFrom,
+        DateTime historyTo,
         CancellationToken cancellationToken)
     {
-        var fromIndiaTime = IndiaTime.Now.AddDays(-7);
-        var toIndiaTime = IndiaTime.Now.AddMinutes(1);
         var furnaceSamples = await _db.FurnaceData
             .AsNoTracking()
             .Where(x => x.Furnace == furnace &&
-                        x.CapturedAt >= fromIndiaTime &&
-                        x.CapturedAt <= toIndiaTime)
+                        x.CapturedAt >= historyFrom &&
+                        x.CapturedAt <= historyTo)
             .OrderBy(x => x.CapturedAt)
             .ToListAsync(cancellationToken);
         var machineSamples = await _db.MachineData
             .AsNoTracking()
             .Where(x => x.Machine == machine &&
-                        x.CapturedAt >= fromIndiaTime &&
-                        x.CapturedAt <= toIndiaTime)
+                        x.CapturedAt >= historyFrom &&
+                        x.CapturedAt <= historyTo)
             .OrderBy(x => x.CapturedAt)
             .ToListAsync(cancellationToken);
 
@@ -1112,7 +1110,7 @@ public class ProcessRecordController : Controller
                     ? FurnaceDoorTiming.EventTime(sample.AutoStartLedSourceTimestamp, sample.CapturedAt)
                     : sample.AutoStartPushButton
                         ? FurnaceDoorTiming.EventTime(sample.AutoStartPushButtonSourceTimestamp, sample.CapturedAt)
-                        : sample.CapturedAt;
+                        : FurnaceDoorTiming.EventTime(sample.MaterialForceSourceTimestamp, sample.CapturedAt);
                 machineStarts.Add(machineStartAt);
             }
 

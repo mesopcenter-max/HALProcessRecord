@@ -76,6 +76,7 @@ public sealed class OpcUaService : IDisposable
                 status.MaterialForce = ToSingle(materialForce.Value);
                 status.MaterialTemperature = ToSingle(materialTemperature.Value);
                 var readAt = IndiaTime.Now;
+                status.MaterialForceSourceTimestamp = IndiaTime.NormalizeOpcSourceTimestamp(materialForce.SourceTimestamp, readAt);
                 status.AutoStartLEDSourceTimestamp = IndiaTime.NormalizeOpcSourceTimestamp(autoStartLed.SourceTimestamp, readAt);
                 status.AutoStopLEDSourceTimestamp = IndiaTime.NormalizeOpcSourceTimestamp(autoStopLed.SourceTimestamp, readAt);
                 status.AutoStartPBSourceTimestamp = IndiaTime.NormalizeOpcSourceTimestamp(autoStartPb.SourceTimestamp, readAt);

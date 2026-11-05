@@ -24,7 +24,10 @@ public static class IndiaTime
             return AsWallClock(receivedAt);
         }
 
-        return FromUtc(sourceUtc);
+        var normalizedSourceTimestamp = FromUtc(sourceUtc);
+        return normalizedSourceTimestamp > AsWallClock(receivedAt).AddSeconds(10)
+            ? AsWallClock(receivedAt)
+            : normalizedSourceTimestamp;
     }
 
     public static DateTime AsWallClock(DateTime timestamp) =>

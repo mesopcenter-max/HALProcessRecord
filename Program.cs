@@ -12,6 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IExcelGeneratorService, ExcelGeneratorService>();
 builder.Services.AddSingleton<OpcUaService>();
 builder.Services.AddSingleton<TimingMonitorService>();
+builder.Services.AddHostedService<OpcUaSubscriptionService>();
 
 var app = builder.Build();
 
